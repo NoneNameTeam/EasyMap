@@ -1,0 +1,47 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BlockCategory {
+    BUILDING
+    ROAD
+    WATER
+}
+
+enum TrafficLevel {
+    UNKNOWN
+    SMOOTH
+    NORMAL
+    CONGESTED
+}
+
+enum RoadEvent {
+    ACCIDENT
+    CONSTRUCTION
+    ROAD_CLOSURE
+}
+
+model MapNode {
+  id      String   @id @default(uuid())
+  x       Int
+  y       Int
+  block   BlockCategory
+  traffic TrafficLevel @default(UNKNOWN)
+  event   RoadEvent?
+  roadId  String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // 复合唯一索引，确保每个坐标点唯一
+  @@unique([x, y])
+  // 为查询优化添加索引
+  @@index([x, y])
+}
