@@ -7,7 +7,13 @@ export function getMapData(prisma: PrismaClient) {
     return async (req: Request, res: Response) => {
         const { block, roadId } = req.query as Record<string, string>;
         const where: any = {};
-        if (block) where.block = block;
+        if (block) {
+            const validBlocks = Object.values(["BUILDING", "ROAD", "WATER"]);
+            if (!validBlocks.includes(block)) {
+                return formatResponse(res, null, `Invalid block value. Must be one of: ${validBlocks.join(", ")}`, 400);
+            }
+            where.block = block;
+        }
         if (roadId) where.roadId = roadId;
 
         const mapNodes = await prisma.mapNode.findMany({
@@ -29,46 +35,67 @@ export function getMapData(prisma: PrismaClient) {
 
 export function GetMapDataByLocation(prisma: PrismaClient) {
     return async (req: Request, res: Response) => {
-        const x = Number(req.params.x);
-        const y = Number(req.params.y);
-
-        const mapNode = await prisma.mapNode.findFirst({
-            where: {
-                x,
-                y
-            },
-            select: {
-                id: true,
-                x: true,
-                y: true,
-                block: true,
-                traffic: true,
-                event: true,
-                roadId: true,
-                updatedAt: true
+        try {
+            const x = Number(req.params.x);
+            const y = Number(req.params.y);
+            if (isNaN(x) || isNaN(y)) {
+                return formatResponse(res, null, "Invalid coordinates", 400);
             }
-        });
-        if (!mapNode) return formatResponse(res, null, "Map node not found", 404);
-        formatResponse(res, mapNode);
+
+            const mapNode = await prisma.mapNode.findFirst({
+                where: {
+                    x,
+                    y
+                },
+                select: {
+                    id: true,
+                    x: true,
+                    y: true,
+                    block: true,
+                    traffic: true,
+                    event: true,
+                    roadId: true,
+                    updatedAt: true
+                }
+            });
+            if (!mapNode) return formatResponse(res, null, "Map node not found", 404);
+            formatResponse(res, mapNode);
+        } catch (error) {
+            formatResponse(res, null, "Internal server error", 500);
+        }
     }
 }
 
 export function CreateMapData(prisma: PrismaClient) {
     return async (req: Request, res: Response) => {
         const body = req.body as Partial<MapNode>;
-        const mapNode = await prisma.mapNode.create({
-            data: {
-                x: body.x!,
-                y: body.y!,
-                block: body.block as BlockCategory,
-                traffic: body.traffic as TrafficLevel,
-                event: body.event as RoadEvent,
-                roadId: body.roadId || null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            }
-        });
-        formatResponse(res, mapNode, "Success",201);
+        if (
+            body.x === undefined || body.x === null ||
+            typeof body.x !== "number" || !Number.isFinite(body.x) ||
+            body.y === undefined || body.y === null ||
+            typeof body.y !== "number" || !Number.isFinite(body.y)
+        ) {
+            return formatResponse(res, null, "Invalid or missing 'x' or 'y' value", 400);
+        }
+        try {
+            const body = req.body as Partial<MapNode>;
+            const mapNode = await prisma.mapNode.create({
+                data: {
+                    x: body.x!,
+                    y: body.y!,
+                    block: body.block as BlockCategory,
+                    traffic: body.traffic as TrafficLevel,
+                    event: body.event as RoadEvent,
+                    roadId: body.roadId || null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                }
+            });
+            formatResponse(res, mapNode, "Success", 201);
+        } catch (error) {
+            console.error("Error creating map node:", error);
+            formatResponse(res, null, "Failed to create map node", 500);
+        }
     };
 }
 
