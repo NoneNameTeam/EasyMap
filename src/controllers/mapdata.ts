@@ -59,9 +59,9 @@ export function GetMapDataByLocation(prisma: PrismaClient) {
                 }
             });
             if (!mapNode) return formatResponse(res, null, "Map node not found", 404);
-            formatResponse(res, mapNode);
+            return formatResponse(res, mapNode);
         } catch (error) {
-            formatResponse(res, null, "Internal server error", 500);
+            return formatResponse(res, null, "Internal server error", 500);
         }
     }
 }
@@ -78,7 +78,6 @@ export function CreateMapData(prisma: PrismaClient) {
             return formatResponse(res, null, "Invalid or missing 'x' or 'y' value", 400);
         }
         try {
-            const body = req.body as Partial<MapNode>;
             const mapNode = await prisma.mapNode.create({
                 data: {
                     x: body.x!,
@@ -108,18 +107,42 @@ export function UpdateMapData(prisma: PrismaClient) {
             "traffic",
             "event",
         ] as const;
-        keys.forEach((k) => {
-            if (k in req.body) data[k] = (req.body as any)[k];
-        });
+        // Define allowed enum values
+        const validBlocks = ["BUILDING", "ROAD", "WATER"];
+        const validTraffic = ["LOW", "MEDIUM", "HIGH"];
+        const validEvents = ["NONE", "ACCIDENT", "CONSTRUCTION"];
+        // Collect and validate values
+        for (const k of keys) {
+            if (k in req.body) {
+                const value = (req.body as any)[k];
+                if (k === "block" && value !== undefined && !validBlocks.includes(value)) {
+                    return formatResponse(res, null, `Invalid block value. Must be one of: ${validBlocks.join(", ")}`, 400);
+                }
+                if (k === "traffic" && value !== undefined && !validTraffic.includes(value)) {
+                    return formatResponse(res, null, `Invalid traffic value. Must be one of: ${validTraffic.join(", ")}`, 400);
+                }
+                if (k === "event" && value !== undefined && !validEvents.includes(value)) {
+                    return formatResponse(res, null, `Invalid event value. Must be one of: ${validEvents.join(", ")}`, 400);
+                }
+                data[k] = value;
+            }
+        }
 
         if (Object.keys(data).length === 0) return formatResponse(res, null, "No data to update", 400);
 
-        const node = await prisma.mapNode.update({
-            where: { id },
-            data
-        });
-        if (!node) return formatResponse(res, null, "Map node not found", 404);
-
-        formatResponse(res, node, "Success");
+        try {
+            const node = await prisma.mapNode.update({
+                where: { id },
+                data
+            });
+            return formatResponse(res, node, "Success");
+        } catch (error: any) {
+            // Prisma throws a specific error code when record not found
+            if (error.code === "P2025") {
+                return formatResponse(res, null, "Map node not found", 404);
+            }
+            console.error("Error updating map node:", error);
+            return formatResponse(res, null, "Failed to update map node", 500);
+        }
     };
 }
