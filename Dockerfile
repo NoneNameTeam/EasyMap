@@ -5,10 +5,11 @@ FROM node:20 AS builder
 WORKDIR /app
 
 # 复制package.json和package-lock.json
-COPY package*.json ./
+COPY package.json ./
+COPY package-lock.json* ./
 
 # 安装所有依赖（包括开发依赖）
-RUN npm ci
+RUN npm install
 
 # 复制项目源代码
 COPY . .
@@ -23,10 +24,11 @@ FROM node:20-slim
 WORKDIR /app
 
 # 复制package.json和package-lock.json
-COPY package*.json ./
+COPY package.json ./
+COPY package-lock.json* ./
 
 # 只安装生产依赖
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # 复制编译后的代码
 COPY --from=builder /app/dist ./dist
