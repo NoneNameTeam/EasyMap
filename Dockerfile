@@ -8,11 +8,14 @@ WORKDIR /app
 COPY package.json ./
 COPY package-lock.json* ./
 
-# 安装所有依赖（包括开发依赖）
-RUN npm install
+# 安装OpenSSL
+RUN apt-get update -y && apt-get install -y openssl
 
 # 复制项目源代码
 COPY . .
+
+# 安装所有依赖（包括开发依赖）
+RUN npm install
 
 # 生成Prisma客户端
 RUN npx prisma generate
@@ -32,9 +35,6 @@ COPY package-lock.json* ./
 
 # 只安装生产依赖
 RUN npm install --only=production
-
-# 生成Prisma客户端
-RUN npx prisma generate
 
 # 复制编译后的代码
 COPY --from=builder /app/dist ./dist

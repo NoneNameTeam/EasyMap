@@ -23,7 +23,7 @@
       "x": 10,
       "y": 20,
       "block": "BUILDING",
-      "traffic": "LOW",
+      "traffic": "UNKNOWN",
       "event": null,
       "roadId": null,
       "updatedAt": "2023-01-01T00:00:00.000Z"
@@ -43,7 +43,7 @@
   "x": 10,
   "y": 20,
   "block": "ROAD",
-  "traffic": "MEDIUM",
+  "traffic": "NORMAL",
   "event": null,
   "roadId": "road-1"
 }
@@ -56,7 +56,7 @@
   "x": 10,
   "y": 20,
   "block": "ROAD",
-  "traffic": "MEDIUM",
+  "traffic": "NORMAL",
   "event": null,
   "roadId": "road-1",
   "createdAt": "2023-01-01T00:00:00.000Z",
@@ -73,7 +73,7 @@
 #### 请求体 (部分)
 ```json
 {
-  "traffic": "HIGH",
+  "traffic": "CONGESTED",
   "event": "ACCIDENT"
 }
 ```
@@ -85,7 +85,7 @@
   "x": 10,
   "y": 20,
   "block": "ROAD",
-  "traffic": "HIGH",
+  "traffic": "CONGESTED",
   "event": "ACCIDENT",
   "roadId": "road-1",
   "createdAt": "2023-01-01T00:00:00.000Z",
@@ -107,7 +107,7 @@
   "x": 10,
   "y": 20,
   "block": "BUILDING",
-  "traffic": "LOW",
+  "traffic": "UNKNOWN",
   "event": null,
   "roadId": null,
   "updatedAt": "2023-01-01T00:00:00.000Z"
@@ -155,7 +155,7 @@
       "x": 10,
       "y": 20,
       "block": "ROAD",
-      "traffic": "MEDIUM",
+      "traffic": "NORMAL",
       "event": null
     }
   ]
@@ -221,11 +221,13 @@
 - `WATER` - 水域
 
 ### TrafficLevel（交通等级）
-- `LOW` - 低
-- `MEDIUM` - 中
-- `HIGH` - 高
+- `UNKNOWN` - 未知
+- `SMOOTH` - 畅通
+- `NORMAL` - 正常
+- `CONGESTED` - 拥堵
 
 ### RoadEvent（道路事件）
 - `NONE` - 无
 - `ACCIDENT` - 事故
 - `CONSTRUCTION` - 施工
+- `ROAD_CLOSURE` - 道路封闭

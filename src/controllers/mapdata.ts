@@ -122,7 +122,7 @@ export function UpdateMapData(prisma: PrismaClient) {
         ] as const;
         // Define allowed enum values
         const validBlocks = ["BUILDING", "ROAD", "WATER"];
-        const validTraffic = ["LOW", "MEDIUM", "HIGH"];
+        const validTraffic = ["UNKNOWN" , "SMOOTH" , "NORMAL" , "CONGESTED"];
         const validEvents = ["NONE", "ACCIDENT", "CONSTRUCTION"];
         // Collect and validate values
         for (const k of keys) {
