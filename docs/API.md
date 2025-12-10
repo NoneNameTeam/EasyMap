@@ -20,7 +20,7 @@
     "x": 10,
     "y": 20,
     "block": "BUILDING",
-    "traffic": "SMOOTH",
+    "traffic": "LOW",
     "event": null,
     "roadId": null,
     "updatedAt": "2023-01-01T00:00:00.000Z"
@@ -37,7 +37,7 @@
   "x": 10,
   "y": 20,
   "block": "ROAD",
-  "traffic": "NORMAL",
+  "traffic": "MEDIUM",
   "event": null,
   "roadId": "road-1"
 }
@@ -50,7 +50,7 @@
   "x": 10,
   "y": 20,
   "block": "ROAD",
-  "traffic": "NORMAL",
+  "traffic": "MEDIUM",
   "event": null,
   "roadId": "road-1",
   "createdAt": "2023-01-01T00:00:00.000Z",
@@ -67,7 +67,7 @@
 #### 请求体 (部分)
 ```json
 {
-  "traffic": "CONGESTED",
+  "traffic": "HIGH",
   "event": "ACCIDENT"
 }
 ```
@@ -79,7 +79,7 @@
   "x": 10,
   "y": 20,
   "block": "ROAD",
-  "traffic": "CONGESTED",
+  "traffic": "HIGH",
   "event": "ACCIDENT",
   "roadId": "road-1",
   "createdAt": "2023-01-01T00:00:00.000Z",
@@ -101,14 +101,129 @@
   "x": 10,
   "y": 20,
   "block": "BUILDING",
-  "traffic": "SMOOTH",
+  "traffic": "LOW",
   "event": null,
   "roadId": null,
   "updatedAt": "2023-01-01T00:00:00.000Z"
 }
 ```
 
-### 5. GET /health
+### 5. GET /objects
+使用可选过滤器检索对象列表数据。
+
+#### 查询参数
+- `objectId`: 按对象ID过滤 (字符串)
+- `roadId`: 按道路ID过滤 (字符串)
+
+#### 响应
+```json
+[
+  {
+    "id": "object-1",
+    "name": "道路A",
+    "type": "ROAD",
+    "nodes": [
+      {
+        "id": 1,
+        "x": 10,
+        "y": 20,
+        "block": "ROAD",
+        "traffic": "MEDIUM",
+        "event": null,
+        "roadId": "object-1",
+        "updatedAt": "2023-01-01T00:00:00.000Z"
+      }
+    ]
+  }
+]
+```
+
+### 6. PUT /objects
+创建新的对象列表。
+
+#### 请求体
+```json
+{
+  "name": "道路A",
+  "type": "ROAD",
+  "nodes": [
+    {
+      "x": 10,
+      "y": 20,
+      "block": "ROAD",
+      "traffic": "MEDIUM",
+      "event": null
+    }
+  ]
+}
+```
+
+#### 响应
+```json
+{
+  "id": "object-1",
+  "name": "道路A",
+  "type": "ROAD",
+  "nodes": [
+    {
+      "id": 1,
+      "x": 10,
+      "y": 20,
+      "block": "ROAD",
+      "traffic": "MEDIUM",
+      "event": null,
+      "roadId": "object-1",
+      "updatedAt": "2023-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### 7. POST /objects/:objectId/nodes
+向对象添加节点。
+
+#### URL参数
+- `objectId`: 对象ID (字符串)
+
+#### 请求体
+```json
+{
+  "nodeId": "1"
+}
+```
+
+#### 响应
+```json
+{
+  "id": "object-1",
+  "name": "道路A",
+  "type": "ROAD",
+  "nodes": [
+    {
+      "id": 1,
+      "x": 10,
+      "y": 20,
+      "block": "ROAD",
+      "traffic": "MEDIUM",
+      "event": null,
+      "roadId": "object-1",
+      "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "x": 15,
+      "y": 25,
+      "block": "ROAD",
+      "traffic": "MEDIUM",
+      "event": null,
+      "roadId": "object-1",
+      "updatedAt": "2023-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### 8. GET /health
 检查服务器健康状态。
 
 #### 响应
@@ -127,12 +242,11 @@
 - `WATER` - 水域
 
 ### TrafficLevel（交通等级）
-- `UNKNOWN` - 未知
-- `SMOOTH` - 顺畅
-- `NORMAL` - 正常
-- `CONGESTED` - 拥堵
+- `LOW` - 低
+- `MEDIUM` - 中
+- `HIGH` - 高
 
 ### RoadEvent（道路事件）
+- `NONE` - 无
 - `ACCIDENT` - 事故
 - `CONSTRUCTION` - 施工
-- `ROAD_CLOSURE` - 道路封闭

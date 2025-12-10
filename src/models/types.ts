@@ -3,7 +3,7 @@ export type TrafficLevel = "UNKNOWN" | "SMOOTH" | "NORMAL" | "CONGESTED";
 export type RoadEvent = "ACCIDENT" | "CONSTRUCTION" | "ROAD_CLOSURE";
 
 export interface MapNode {
-    id: number;
+    id: string;
     x: number;
     y: number;
     block: BlockCategory;
@@ -12,4 +12,11 @@ export interface MapNode {
     roadId: string | null;
     updatedAt: string;
     CreatedAt: string;
+}
+
+export interface ObjectList {
+    id: string;
+    name: string;
+    type: BlockCategory;
+    nodes: MapNode[];
 }

@@ -36,7 +36,9 @@ model MapNode {
   traffic TrafficLevel @default(UNKNOWN)
   event   RoadEvent?
   roadId  String?
-  
+  road    ObjectList?   @relation(fields: [roadId], references: [id])
+
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -44,4 +46,15 @@ model MapNode {
   @@unique([x, y])
   // 为查询优化添加索引
   @@index([x, y])
+}
+
+model ObjectList {
+  id        String   @id @default(uuid())
+  name      String
+  type      BlockCategory
+  nodes     MapNode[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
 }

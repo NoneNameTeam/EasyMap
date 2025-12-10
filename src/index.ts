@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { PrismaClient } from "@prisma/client";
 import { health } from "./controllers/health.js";
 import { buildRouter } from "./routes/index.js";
@@ -9,6 +10,7 @@ const prisma = new PrismaClient();
 
 app.use(buildRouter(prisma));
 app.use(express.json());
+app.use(cors({ origin: "*" }));
 app.get("/health", async (req, res) => {
     return health(req,res);
 })
