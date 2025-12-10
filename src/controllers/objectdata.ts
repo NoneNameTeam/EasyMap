@@ -20,7 +20,11 @@ export function getObjectList(prisma: PrismaClient) {
         const result = await prisma.objectList.findMany({
             where: where,
             include: {
-                nodes: true
+                nodes: {
+                    select: {
+                        id: true
+                    }
+                }
             }
         });
         formatResponse(res,result);
@@ -84,7 +88,11 @@ export function createObjectList(prisma: PrismaClient) {
                     id: objectList.id
                 },
                 include: {
-                    nodes: true
+                    nodes: {
+                        select: {
+                            id: true
+                        }
+                    }
                 }
             });
 
@@ -116,7 +124,11 @@ export function addNodeToObject(prisma: PrismaClient) {
                     id: objectId
                 },
                 include: {
-                    nodes: true
+                    nodes: {
+                        select: {
+                            id: true
+                        }
+                    }
                 }
             });
             
