@@ -5,7 +5,7 @@ import { formatResponse } from "../utils/formatter.js";
 
 export function getObjectList(prisma: PrismaClient) {
     return async (req: Request, res: Response) => {
-        const { objectId, roadId } = req.query as Record<string, string>;
+        const { objectId, roadId, cursor, limit } = req.query as Record<string, string>;
         const where: any = {};
         if (objectId) {
             where.id = objectId;
@@ -17,6 +17,10 @@ export function getObjectList(prisma: PrismaClient) {
                 }
             };
         }
+        const take = limit ? parseInt(limit) : 100;
+        const skip = cursor ? 1 : 0;
+        const cursorObj = cursor ? { id: cursor } : undefined;
+
         const result = await prisma.objectList.findMany({
             where: where,
             include: {
@@ -25,9 +29,18 @@ export function getObjectList(prisma: PrismaClient) {
                         id: true
                     }
                 }
-            }
+            },
+            take: take + 1,
+            skip: skip,
+            cursor: cursorObj,
+            orderBy: { id: 'asc' }
         });
-        formatResponse(res,result);
+
+        const hasNextPage = result.length > take;
+        const items = hasNextPage ? result.slice(0, -1) : result;
+        const nextCursor = hasNextPage ? items[items.length - 1].id : null;
+
+        formatResponse(res, { items, nextCursor, hasNextPage });
     }
 }
 export function createObjectList(prisma: PrismaClient) {

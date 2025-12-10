@@ -6,26 +6,32 @@
 ## 接口端点
 
 ### 1. GET /maps/data
-使用可选过滤器检索地图数据。
+使用可选过滤器检索地图数据，支持基于游标的分页。
 
 #### 查询参数
 - `block`: 按区块类型过滤 (字符串)
 - `roadId`: 按道路ID过滤 (字符串)
+- `cursor`: 分页游标，使用上一页的最后一个元素ID (字符串，可选)
+- `limit`: 每页返回的数量，默认100 (整数，可选)
 
 #### 响应
 ```json
-[
-  {
-    "id": 1,
-    "x": 10,
-    "y": 20,
-    "block": "BUILDING",
-    "traffic": "LOW",
-    "event": null,
-    "roadId": null,
-    "updatedAt": "2023-01-01T00:00:00.000Z"
-  }
-]
+{
+  "items": [
+    {
+      "id": 1,
+      "x": 10,
+      "y": 20,
+      "block": "BUILDING",
+      "traffic": "LOW",
+      "event": null,
+      "roadId": null,
+      "updatedAt": "2023-01-01T00:00:00.000Z"
+    }
+  ],
+  "nextCursor": "2",
+  "hasNextPage": true
+}
 ```
 
 ### 2. POST /maps/data
@@ -109,33 +115,31 @@
 ```
 
 ### 5. GET /objects
-使用可选过滤器检索对象列表数据。
+使用可选过滤器检索对象列表数据，支持基于游标的分页。
 
 #### 查询参数
 - `objectId`: 按对象ID过滤 (字符串)
 - `roadId`: 按道路ID过滤 (字符串)
+- `cursor`: 分页游标，使用上一页的最后一个元素ID (字符串，可选)
+- `limit`: 每页返回的数量，默认100 (整数，可选)
 
 #### 响应
 ```json
-[
-  {
-    "id": "object-1",
-    "name": "道路A",
-    "type": "ROAD",
-    "nodes": [
-      {
-        "id": 1,
-        "x": 10,
-        "y": 20,
-        "block": "ROAD",
-        "traffic": "MEDIUM",
-        "event": null,
-        "roadId": "object-1",
-        "updatedAt": "2023-01-01T00:00:00.000Z"
-      }
-    ]
-  }
-]
+{
+  "items": [
+    {
+      "id": "object-1",
+      "name": "道路A",
+      "type": "ROAD",
+      "nodes": [
+        { "id": 1 },
+        { "id": 2 }
+      ]
+    }
+  ],
+  "nextCursor": "object-2",
+  "hasNextPage": true
+}
 ```
 
 ### 6. PUT /objects
@@ -165,16 +169,8 @@
   "name": "道路A",
   "type": "ROAD",
   "nodes": [
-    {
-      "id": 1,
-      "x": 10,
-      "y": 20,
-      "block": "ROAD",
-      "traffic": "MEDIUM",
-      "event": null,
-      "roadId": "object-1",
-      "updatedAt": "2023-01-01T00:00:00.000Z"
-    }
+    { "id": 1 },
+    { "id": 2 }
   ]
 }
 ```
@@ -199,26 +195,9 @@
   "name": "道路A",
   "type": "ROAD",
   "nodes": [
-    {
-      "id": 1,
-      "x": 10,
-      "y": 20,
-      "block": "ROAD",
-      "traffic": "MEDIUM",
-      "event": null,
-      "roadId": "object-1",
-      "updatedAt": "2023-01-01T00:00:00.000Z"
-    },
-    {
-      "id": 2,
-      "x": 15,
-      "y": 25,
-      "block": "ROAD",
-      "traffic": "MEDIUM",
-      "event": null,
-      "roadId": "object-1",
-      "updatedAt": "2023-01-01T00:00:00.000Z"
-    }
+    { "id": 1 },
+    { "id": 2 },
+    { "id": 3 }
   ]
 }
 ```
