@@ -14,6 +14,9 @@ RUN npm install
 # 复制项目源代码
 COPY . .
 
+# 生成Prisma客户端
+RUN npx prisma generate
+
 # 编译TypeScript代码
 RUN npm run build
 
@@ -30,11 +33,17 @@ COPY package-lock.json* ./
 # 只安装生产依赖
 RUN npm install --only=production
 
+# 生成Prisma客户端
+RUN npx prisma generate
+
 # 复制编译后的代码
 COPY --from=builder /app/dist ./dist
 
 # 复制Prisma模式文件
 COPY --from=builder /app/prisma ./prisma
+
+# 复制生成的Prisma客户端文件
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # 暴露端口
 EXPOSE 3000

@@ -7,36 +7,25 @@ stages:
 build_and_push_docker_image_to_harbor_kaniko:
   stage: build
 
-  image: registry.dforwa.cn:2053/library/kaniko-executor:debug # <-- 确保是 debug 或包含 Shell 的版本
+  image: registry.dforwa.cn:2053/library/kaniko-executor:debug
 
   variables:
-    HARBOR_FULL_ADDRESS: "$HARBOR_HOST:2053" # $HARBOR_HOST 来自 GitLab Harbor 集成
-
-    # 使用 CI_PROJECT_NAME 获取项目名称
+    HARBOR_FULL_ADDRESS: "$HARBOR_HOST:2053"
     PROJECT_NAME: $CI_PROJECT_NAME
-
-    # 定义要构建和推送的镜像的基本名称 (Registry地址/Harbor项目名/镜像名)
-    # 这里假设你的 Harbor 项目名是固定的，例如 "my-harbor-project"
     DOCKER_IMAGE_BASE: "$HARBOR_FULL_ADDRESS/$HARBOR_PROJECT/$PROJECT_NAME"
-
-    # 定义带有 SHA 标签的镜像完整名称
     DOCKER_IMAGE_TAG_SHA: "$DOCKER_IMAGE_BASE:$CI_COMMIT_SHORT_SHA"
-
-    # 可选：为 master/main 分支定义一个 latest 标签的完整名称
     DOCKER_IMAGE_TAG_LATEST: "$DOCKER_IMAGE_BASE:latest"
 
   before_script:
-    - | # 使用多行脚本语法
+    - |
       echo "Generating Harbor authentication file..."
       mkdir -p /kaniko/.docker
-      # 使用 GitLab 提供的 Harbor 凭据生成 config.json 文件
       echo "{\"auths\":{\"$HARBOR_FULL_ADDRESS\":{\"username\":\"$HARBOR_USERNAME\",\"password\":\"$HARBOR_PASSWORD\"}}}" > /kaniko/.docker/config.json
       echo "Harbor authentication file created at /kaniko/.docker/config.json"
 
-
   script:
     # 构建带有 SHA 标签的镜像并推送
-    - | # 使用多行脚本语法，移除行末注释
+    - |
       echo "Building and pushing Docker image: $DOCKER_IMAGE_TAG_SHA using Kaniko"
       /kaniko/executor \
         --context . \
@@ -47,7 +36,7 @@ build_and_push_docker_image_to_harbor_kaniko:
         --snapshotMode=redo \
         --use-new-run
 
-    # 可选：如果当前是 main 或 master 分支，额外构建并推送 latest 标签
+    # 如果是主分支，推送 latest 标签
     - |
       if [ "$CI_COMMIT_BRANCH" = "main" ] || [ "$CI_COMMIT_BRANCH" = "master" ]; then
         LATEST_TAG="$DOCKER_IMAGE_BASE:latest"
@@ -62,7 +51,22 @@ build_and_push_docker_image_to_harbor_kaniko:
           --use-new-run
       fi
 
-  # 定义何时运行此作业
+    # 如果是非主分支，推送带有分支名的标签
+    - |
+      if [ "$CI_COMMIT_BRANCH" != "main" ] && [ "$CI_COMMIT_BRANCH" != "master" ]; then
+        # 将分支名中的特殊字符替换为连字符，使其符合 Docker tag 规范
+        SAFE_BRANCH_NAME=$(echo "$CI_COMMIT_BRANCH" | sed 's/[^a-zA-Z0-9._-]/-/g')
+        BRANCH_TAG="$DOCKER_IMAGE_BASE:$SAFE_BRANCH_NAME"
+        echo "Building and pushing branch image: $BRANCH_TAG using Kaniko"
+        /kaniko/executor \
+          --context . \
+          --dockerfile Dockerfile \
+          --destination $BRANCH_TAG \
+          --cache=true \
+          --cache-repo $DOCKER_IMAGE_BASE/cache \
+          --snapshotMode=redo \
+          --use-new-run
+      fi
+
   rules:
-    # 当推送到任何分支时触发
     - if: $CI_COMMIT_BRANCH
