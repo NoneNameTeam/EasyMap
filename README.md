@@ -92,3 +92,6 @@ npm start
 └── README.md             # 项目说明
 ```
 
+## 许可证
+
+ISC

@@ -10,8 +10,8 @@ export interface MapNode {
     traffic: TrafficLevel;
     event: RoadEvent | null;
     roadId: string | null;
-    updatedAt: string;
-    CreatedAt: string;
+    updatedAt: Date;
+    createdAt: Date;
 }
 
 export interface ObjectList {

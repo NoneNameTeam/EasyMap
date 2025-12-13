@@ -59,3 +59,83 @@ model ObjectList {
   updatedAt DateTime @updatedAt
 
 }
+
+// 道路定义
+model Road {
+  id          String   @id @default(uuid())
+  name        String   @unique  // 道路1, 道路2
+  description String?
+
+  centerLines CenterLine[]
+  keyPoints   KeyPoint[]
+  lanes       Lane[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 中心线定义
+model CenterLine {
+  id          String   @id @default(uuid())
+  roadId      String
+  road        Road     @relation(fields: [roadId], references:  [id], onDelete: Cascade)
+
+  type        String   // "HORIZONTAL" | "VERTICAL"
+
+  // 水平线:  y固定, x范围
+  // 垂直线: x固定, y范围
+  fixedAxis   String   // "X" | "Y"
+  fixedValue  Int      // 固定的坐标值
+  startValue  Int      // 起始值
+  endValue    Int      // 结束值
+
+  @@index([roadId])
+}
+
+// 关键点（路口、转角、端点）
+model KeyPoint {
+  id          String   @id @default(uuid())
+  roadId      String
+  road        Road     @relation(fields: [roadId], references: [id], onDelete: Cascade)
+
+  name        String   // "左起点", "路口", "右T路口", "上拐角" 等
+  x           Int
+  y           Int
+  type        String   // "ENDPOINT" | "INTERSECTION" | "T_JUNCTION" | "CORNER" | "ENTRANCE"
+
+  // 连接的其他关键点
+  connectedTo String[] // KeyPoint IDs
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([roadId, x, y])
+  @@index([roadId])
+}
+
+// 车道定义（基于道路段）
+model Lane {
+  id           String   @id @default(uuid())
+  roadId       String
+  road         Road     @relation(fields: [roadId], references:  [id], onDelete: Cascade)
+
+  laneNumber   Int      // 车道编号
+  direction    String   // "FORWARD" | "BACKWARD"
+
+  // 车道的起止点
+  startX       Int
+  startY       Int
+  endX         Int
+  endY         Int
+
+  // 车道属性
+  width        Int      @default(8)
+  centerOffset Int      // 相对中心线的偏移 (+4 或 -4)
+  isOpen       Boolean  @default(true)
+  speedLimit   Int      @default(60)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([roadId])
+}

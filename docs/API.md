@@ -213,6 +213,187 @@
 }
 ```
 
+### 9. POST /roads
+创建新的道路配置。
+
+#### 请求体
+```json
+{
+  "name": "道路A",
+  "description": "主干道",
+  "centerLines": [
+    {
+      "type": "HORIZONTAL",
+      "value": 100,
+      "start": 0,
+      "end": 200
+    }
+  ],
+  "keyPoints": [
+    {
+      "name": "起点",
+      "x": 0,
+      "y": 100,
+      "type": "ENDPOINT"
+    },
+    {
+      "name": "终点",
+      "x": 200,
+      "y": 100,
+      "type": "ENDPOINT",
+      "connectsTo": ["起点"]
+    }
+  ]
+}
+```
+
+#### 响应
+```json
+{
+  "id": "road-1",
+  "name": "道路A",
+  "description": "主干道",
+  "centerLines": [
+    {
+      "id": "centerline-1",
+      "roadId": "road-1",
+      "type": "HORIZONTAL",
+      "fixedAxis": "Y",
+      "fixedValue": 100,
+      "startValue": 0,
+      "endValue": 200
+    }
+  ],
+  "keyPoints": [
+    {
+      "id": "keypoint-1",
+      "roadId": "road-1",
+      "name": "起点",
+      "x": 0,
+      "y": 100,
+      "type": "ENDPOINT",
+      "connectedTo": ["keypoint-2"]
+    },
+    {
+      "id": "keypoint-2",
+      "roadId": "road-1",
+      "name": "终点",
+      "x": 200,
+      "y": 100,
+      "type": "ENDPOINT",
+      "connectedTo": ["keypoint-1"]
+    }
+  ],
+  "lanes": [
+    {
+      "id": "lane-1",
+      "roadId": "road-1",
+      "laneNumber": 1,
+      "direction": "FORWARD",
+      "startX": 0,
+      "startY": 100,
+      "endX": 200,
+      "endY": 100,
+      "width": 8,
+      "centerOffset": 4
+    },
+    {
+      "id": "lane-2",
+      "roadId": "road-1",
+      "laneNumber": 2,
+      "direction": "BACKWARD",
+      "startX": 0,
+      "startY": 100,
+      "endX": 200,
+      "endY": 100,
+      "width": 8,
+      "centerOffset": -4
+    }
+  ]
+}
+```
+
+### 10. GET /roads
+获取所有道路配置。
+
+#### 响应
+```json
+[
+  {
+    "id": "road-1",
+    "name": "道路A",
+    "description": "主干道",
+    "centerLines": [...],
+    "keyPoints": [...],
+    "lanes": [...]
+  }
+]
+```
+
+### 11. GET /roads/:id
+获取单条道路详情。
+
+#### URL参数
+- `id`: 道路ID (字符串)
+
+#### 响应
+```json
+{
+  "id": "road-1",
+  "name": "道路A",
+  "description": "主干道",
+  "centerLines": [...],
+  "keyPoints": [...],
+  "lanes": [...]
+}
+```
+
+### 12. DELETE /roads/:id
+删除道路配置。
+
+#### URL参数
+- `id`: 道路ID (字符串)
+
+#### 响应
+```json
+{
+  "deleted": true
+}
+```
+
+### 13. GET /roads/network
+获取路网图（用于可视化）。
+
+#### 响应
+```json
+{
+  "nodes": [
+    {
+      "id": "keypoint-1",
+      "name": "起点",
+      "position": { "x": 0, "y": 100 },
+      "type": "ENDPOINT",
+      "roadName": "道路A"
+    }
+  ],
+  "edges": [
+    {
+      "from": "keypoint-1",
+      "to": "keypoint-2"
+    }
+  ],
+  "roads": [
+    {
+      "id": "road-1",
+      "name": "道路A",
+      "centerLines": [...],
+      "keyPoints": [...],
+      "lanes": [...]
+    }
+  ]
+}
+```
+
 ## 数据类型
 
 ### BlockCategory（区块类别）
@@ -227,7 +408,21 @@
 - `CONGESTED` - 拥堵
 
 ### RoadEvent（道路事件）
-- `NONE` - 无
 - `ACCIDENT` - 事故
 - `CONSTRUCTION` - 施工
 - `ROAD_CLOSURE` - 道路封闭
+
+### CenterLineType（中心线类型）
+- `HORIZONTAL` - 水平
+- `VERTICAL` - 垂直
+
+### KeyPointType（关键点类型）
+- `ENDPOINT` - 端点
+- `INTERSECTION` - 交叉点
+- `T_JUNCTION` - T型路口
+- `CORNER` - 拐角
+- `ENTRANCE` - 入口
+
+### LaneDirection（车道方向）
+- `FORWARD` - 正向
+- `BACKWARD` - 反向
