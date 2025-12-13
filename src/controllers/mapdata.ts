@@ -5,7 +5,7 @@ import { formatResponse } from "../utils/formatter.js";
 
 export function getMapData(prisma: PrismaClient) {
     return async (req: Request, res: Response) => {
-        const { block, roadId } = req.query as Record<string, string>;
+        const { block, roadId, cursor, limit } = req.query as Record<string, string>;
         const where: any = {};
         if (block) {
             const validBlocks = Object.values(["BUILDING", "ROAD", "WATER"]);
@@ -15,6 +15,10 @@ export function getMapData(prisma: PrismaClient) {
             where.block = block;
         }
         if (roadId) where.roadId = roadId;
+
+        const take = limit ? parseInt(limit) : 100;
+        const skip = cursor ? 1 : 0;
+        const cursorObj = cursor ? { id: cursor } : undefined;
 
         const mapNodes = await prisma.mapNode.findMany({
             where: where,
@@ -27,9 +31,18 @@ export function getMapData(prisma: PrismaClient) {
                 event: true,
                 roadId: true,
                 updatedAt: true
-            }
-        })
-        formatResponse(res, mapNodes);
+            },
+            take: take + 1,
+            skip: skip,
+            cursor: cursorObj,
+            orderBy: { id: 'asc' }
+        });
+
+        const hasNextPage = mapNodes.length > take;
+        const items = hasNextPage ? mapNodes.slice(0, -1) : mapNodes;
+        const nextCursor = hasNextPage ? items[items.length - 1].id : null;
+
+        formatResponse(res, { items, nextCursor, hasNextPage });
     };
 }
 
@@ -109,7 +122,7 @@ export function UpdateMapData(prisma: PrismaClient) {
         ] as const;
         // Define allowed enum values
         const validBlocks = ["BUILDING", "ROAD", "WATER"];
-        const validTraffic = ["LOW", "MEDIUM", "HIGH"];
+        const validTraffic = ["UNKNOWN" , "SMOOTH" , "NORMAL" , "CONGESTED"];
         const validEvents = ["NONE", "ACCIDENT", "CONSTRUCTION"];
         // Collect and validate values
         for (const k of keys) {
