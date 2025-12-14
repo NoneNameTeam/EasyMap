@@ -1,20 +1,67 @@
-import express from "express";
-import cors from "cors";
-import { PrismaClient } from "@prisma/client";
-import { health } from "./controllers/health.js";
-import { buildRouter } from "./routes/index.js";
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+import { buildRouter } from './routes/index.js';
+import { VehicleLocationService } from './services/VehicleLocation.js';
 
-// 初始化 Express 应用程序和 Prisma 客户端
 const app = express();
 const prisma = new PrismaClient();
+const PORT = process.env.PORT || 3000;
+const MQTT_BROKER = process.env.MQTT_BROKER || 'mqtt://localhost:1883';
 
-app.use(buildRouter(prisma));
-app.use(express.json());
-app.use(cors({ origin: "*" }));
-app.get("/health", async (req, res) => {
-    return health(req,res);
-})
+// 构建路由
+const router = buildRouter(prisma);
+app.use('/', router);
 
-app.listen(3000, () => {
-    console.log('Server is running');
+// 健康检查
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: Date.now(),
+        mqtt: {
+            broker: MQTT_BROKER,
+            topic: 'vehicle/+/info'
+        }
+    });
 });
+
+// 初始化MQTT车辆位置服务
+let vehicleService:  VehicleLocationService;
+
+try {
+    vehicleService = new VehicleLocationService(prisma, MQTT_BROKER);
+    console.log(`MQTT service initialized with broker: ${MQTT_BROKER}`);
+    console.log('Subscribed to topic: vehicle/+/info');
+} catch (error) {
+    console.error('Failed to initialize MQTT service:', error);
+}
+
+// 优雅关闭
+process. on('SIGINT', async () => {
+    console.log('Shutting down gracefully...');
+
+    if (vehicleService) {
+        vehicleService.disconnect();
+    }
+
+    await prisma.$disconnect();
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM received, shutting down.. .');
+
+    if (vehicleService) {
+        vehicleService.disconnect();
+    }
+
+    await prisma.$disconnect();
+    process.exit(0);
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`MQTT Topic Pattern: vehicle/{vehicleId}/info`);
+    console.log(`Example: vehicle/esp32_001/info`);
+});
+
+export { vehicleService };
