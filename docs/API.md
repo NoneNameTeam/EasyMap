@@ -1,9 +1,15 @@
 # API文档
 
-## 基础URL
+## 目录
+- [RESTful API](#restful-api)
+- [MQTT API](#mqtt-api)
+
+## RESTful API
+
+### 基础URL
 `http://localhost:3000/` (默认)
 
-## 接口端点
+### 接口端点
 
 ### 1. GET /maps/data
 使用可选过滤器检索地图数据，支持基于游标的分页。
@@ -323,9 +329,9 @@
     "id": "road-1",
     "name": "道路A",
     "description": "主干道",
-    "centerLines": [...],
-    "keyPoints": [...],
-    "lanes": [...]
+    "centerLines": ["..."],
+    "keyPoints": ["..."],
+    "lanes": ["..."]
   }
 ]
 ```
@@ -342,9 +348,9 @@
   "id": "road-1",
   "name": "道路A",
   "description": "主干道",
-  "centerLines": [...],
-  "keyPoints": [...],
-  "lanes": [...]
+  "centerLines": ["..."],
+  "keyPoints": ["..."],
+  "lanes": ["..."]
 }
 ```
 
@@ -386,11 +392,235 @@
     {
       "id": "road-1",
       "name": "道路A",
-      "centerLines": [...],
-      "keyPoints": [...],
-      "lanes": [...]
-    }
+      "centerLines": ["..."],
+      "keyPoints": ["..."],
+      "lanes": ["..."]    }
   ]
+}
+```
+
+### 14. GET /vehicles
+获取所有车辆当前位置，支持基于游标的分页。
+
+#### 查询参数
+- `type`: 按车辆类型过滤 (字符串，可选)
+- `limit`: 每页返回的数量，默认100 (整数，可选)
+- `cursor`: 分页游标，使用上一页的最后一个元素ID (字符串，可选)
+
+#### 响应
+```json
+{
+  "items": [
+    {
+      "id": "vehicle-1",
+      "type": "CAR",
+      "currentX": 100,
+      "currentY": 200,
+      "speed": 50,
+      "direction": "EAST",
+      "distance": 1500,
+      "angle": 90,
+      "createdAt": "2023-01-01T00:00:00.000Z",
+      "updatedAt": "2023-01-01T00:00:00.000Z"
+    }
+  ],
+  "nextCursor": "vehicle-2",
+  "hasNextPage": true
+}
+```
+
+### 15. POST /vehicles
+注册新车辆。
+
+#### 请求体
+```json
+{
+  "type": "CAR",
+  "currentX": 100,
+  "currentY": 200,
+  "speed": 50,
+  "direction": "EAST",
+  "distance": 1500,
+  "angle": 90
+}
+```
+
+#### 响应
+```json
+{
+  "id": "vehicle-1",
+  "type": "CAR",
+  "currentX": 100,
+  "currentY": 200,
+  "speed": 50,
+  "direction": "EAST",
+  "distance": 1500,
+  "angle": 90,
+  "createdAt": "2023-01-01T00:00:00.000Z",
+  "updatedAt": "2023-01-01T00:00:00.000Z"
+}
+```
+
+### 16. GET /vehicles/stats
+获取车辆统计信息。
+
+#### 响应
+```json
+{
+  "totalVehicles": 10,
+  "vehiclesByType": [
+    {
+      "type": "CAR",
+      "_count": {
+        "id": 7
+      }
+    },
+    {
+      "type": "TRUCK",
+      "_count": {
+        "id": 3
+      }
+    }
+  ],
+  "recentActivity": 5
+}
+```
+
+### 17. GET /vehicles/:vehicleId
+获取单个车辆当前位置。
+
+#### URL参数
+- `vehicleId`: 车辆ID (字符串)
+
+#### 响应
+```json
+{
+  "id": "vehicle-1",
+  "type": "CAR",
+  "currentX": 100,
+  "currentY": 200,
+  "speed": 50,
+  "direction": "EAST",
+  "distance": 1500,
+  "angle": 90,
+  "createdAt": "2023-01-01T00:00:00.000Z",
+  "updatedAt": "2023-01-01T00:00:00.000Z"
+}
+```
+
+### 18. GET /vehicles/:vehicleId/trajectory
+获取车辆轨迹历史。
+
+#### URL参数
+- `vehicleId`: 车辆ID (字符串)
+
+#### 查询参数
+- `startTime`: 开始时间戳 (字符串，可选)
+- `endTime`: 结束时间戳 (字符串，可选)
+- `limit`: 返回记录数量，默认100 (整数，可选)
+
+#### 响应
+```json
+[
+  {
+    "id": 1,
+    "vehicleId": "vehicle-1",
+    "X": 100,
+    "Y": 200,
+    "type": "CAR",
+    "direction": "EAST",
+    "distance": 1500,
+    "angle": 90,
+    "valid": true,
+    "events": 0,
+    "rssi": -50,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  }
+]
+```
+
+### 19. GET /vehicles/:vehicleId/history/valid
+获取车辆最近的有效位置历史。
+
+#### URL参数
+- `vehicleId`: 车辆ID (字符串)
+
+#### 查询参数
+- `limit`: 返回记录数量，默认50 (整数，可选)
+
+#### 响应
+```json
+[
+  {
+    "id": 1,
+    "vehicleId": "vehicle-1",
+    "X": 100,
+    "Y": 200,
+    "type": "CAR",
+    "direction": "EAST",
+    "distance": 1500,
+    "angle": 90,
+    "valid": true,
+    "events": 0,
+    "rssi": -50,
+    "createdAt": "2023-01-01T00:00:00.000Z"
+  }
+]
+```
+
+### 20. DELETE /vehicles/:vehicleId
+删除车辆及其历史数据。
+
+#### URL参数
+- `vehicleId`: 车辆ID (字符串)
+
+#### 响应
+```json
+{
+  "deleted": true,
+  "message": "Vehicle deleted successfully"
+}
+```
+
+### 21. GET /vehicles/area/search
+获取指定区域内的车辆。
+
+#### 查询参数
+- `minX`: 最小X坐标 (数字，必填)
+- `maxX`: 最大X坐标 (数字，必填)
+- `minY`: 最小Y坐标 (数字，必填)
+- `maxY`: 最大Y坐标 (数字，必填)
+
+#### 响应
+```json
+[
+  {
+    "id": "vehicle-1",
+    "type": "CAR",
+    "currentX": 100,
+    "currentY": 200,
+    "speed": 50,
+    "direction": "EAST",
+    "distance": 1500,
+    "angle": 90,
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z"
+  }
+]
+```
+
+### 22. DELETE /vehicles/history/clean
+清理旧的历史数据。
+
+#### 查询参数
+- `days`: 保留天数，默认7天 (整数，可选)
+
+#### 响应
+```json
+{
+  "deleted": 100,
+  "cutoffDate": "2023-01-01T00:00:00.000Z",
+  "message": "Cleaned 100 old records"
 }
 ```
 
@@ -426,3 +656,151 @@
 ### LaneDirection（车道方向）
 - `FORWARD` - 正向
 - `BACKWARD` - 反向
+
+## MQTT API
+
+### 概述
+MQTT API用于实时传输车辆位置数据，支持低延迟的位置更新和实时监控。
+
+### 连接信息
+- 默认MQTT服务器地址：`mqtt://localhost:1883`
+- 可以通过环境变量`MQTT_BROKER`自定义MQTT服务器地址
+
+### 主题格式
+
+#### 车辆位置主题
+```
+vehicle/{vehicleId}/info
+```
+
+**参数说明：**
+- `vehicleId`: 车辆唯一标识符，例如 `esp32_001` 或 `vehicle-123`
+
+#### 示例主题
+```
+vehicle/esp32_001/info
+vehicle/truck-456/info
+```
+
+### 消息格式
+
+#### 车辆位置消息
+```json
+{
+  "vehicle_id": "esp32_001",
+  "type": "CAR",
+  "valid": true,
+  "x": 100.5,
+  "y": 200.8,
+  "distance": 1500,
+  "angle": 90,
+  "direction": "EAST",
+  "error": 5,
+  "timestamp": 1672531200,
+  "events": 0,
+  "rssi": -50
+}
+```
+
+**字段说明：**
+- `vehicle_id`: 车辆唯一标识符
+- `type`: 车辆类型（如 `CAR`, `TRUCK`, `BUS` 等）
+- `valid`: 数据有效性标记（`true`/`false`）
+- `x`: X坐标
+- `y`: Y坐标
+- `distance`: 累计行驶距离（米）
+- `angle`: 车辆角度（度）
+- `direction`: 行驶方向（如 `EAST`, `WEST`, `NORTH`, `SOUTH`, `UNKNOWN` 等）
+- `error`: 定位误差（米）
+- `timestamp`: Unix时间戳（秒）
+- `events`: 事件标记（如 0=无事件, 1=左转, 2=右转等）
+- `rssi`: 信号强度（dBm）
+
+### MQTT服务功能
+
+#### 数据处理流程
+1. **接收消息**: 服务器订阅 `vehicle/+/info` 主题，接收所有车辆的位置消息
+2. **数据过滤**: 对位置数据进行去噪和有效性检查
+3. **地图匹配**: 将车辆位置匹配到地图上的道路
+4. **存储历史**: 保存位置数据到数据库
+5. **更新状态**: 更新车辆当前位置和交通状态
+
+#### 数据有效性检查
+- 检查 `valid` 标记是否为 `true`
+- 过滤坐标为 (0, 0) 的无效数据
+- 检查 RSSI 信号强度（小于 -80 dBm 视为无效）
+- 检查定位误差（大于 10 米视为无效）
+
+#### 交通状态更新
+- 根据道路上的车辆密度自动更新交通状态
+- 交通状态分为：
+  - `UNKNOWN` - 未知
+  - `SMOOTH` - 畅通（车辆密度 < 0.1）
+  - `NORMAL` - 正常（车辆密度 0.1-0.3）
+  - `CONGESTED` - 拥堵（车辆密度 > 0.3）
+
+### MQTT客户端示例
+
+#### Node.js示例
+```javascript
+const mqtt = require('mqtt');
+
+// 连接到MQTT服务器
+const client = mqtt.connect('mqtt://localhost:1883');
+
+// 发布车辆位置数据
+function publishVehicleLocation(vehicleId, position) {
+  const topic = `vehicle/${vehicleId}/info`;
+  const message = JSON.stringify({
+    vehicle_id: vehicleId,
+    type: "CAR",
+    valid: true,
+    x: position.x,
+    y: position.y,
+    distance: 1500,
+    angle: 90,
+    direction: "EAST",
+    error: 5,
+    timestamp: Math.floor(Date.now() / 1000),
+    events: 0,
+    rssi: -50
+  });
+  
+  client.publish(topic, message, (err) => {
+    if (err) {
+      console.error('发布失败:', err);
+    } else {
+      console.log('发布成功:', topic);
+    }
+  });
+}
+
+// 示例用法
+client.on('connect', () => {
+  console.log('已连接到MQTT服务器');
+  
+  // 每10秒发布一次位置数据
+  setInterval(() => {
+    publishVehicleLocation('esp32_001', { x: 100.5, y: 200.8 });
+  }, 10000);
+});
+```
+
+### 健康检查
+MQTT服务状态可以通过RESTful API的健康检查端点查看：
+
+```
+GET /health
+```
+
+**响应示例：**
+```json
+{
+  "status": "ok",
+  "timestamp": 1234567890,
+  "mqtt": {
+    "broker": "mqtt://localhost:1883",
+    "topic": "vehicle/+/info"
+  }
+}
+```
