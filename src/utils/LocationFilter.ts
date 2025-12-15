@@ -26,10 +26,8 @@ export class LocationFilter {
         if (data.x === 0 && data.y === 0) return false;
 
         // 检查RSSI信号强度(信号太弱可能导致位置不准)
-        if (data.rssi < -80) return false;
+        if (data.rssi < -100) return false;
 
-        // 检查error字段
-        if (data.error > 10) return false;
 
         return true;
     }
