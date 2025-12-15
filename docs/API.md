@@ -399,7 +399,300 @@
 }
 ```
 
-### 14. GET /vehicles
+### 14. GET /roads/congestion/overview
+获取所有路段的拥堵概览。
+
+#### 查询参数
+- `level`: 按交通等级过滤 (字符串，可选)
+
+#### 响应
+```json
+{
+  "totalRoads": 5,
+  "overview": [
+    {
+      "roadId": "road-1",
+      "roadName": "道路A",
+      "trafficLevel": "CONGESTED",
+      "vehicleCount": 15,
+      "congestionPercentage": 75,
+      "nodeCount": 100
+    }
+  ],
+  "summary": {
+    "smooth": 1,
+    "normal": 2,
+    "congested": 1,
+    "unknown": 1
+  }
+}
+```
+
+### 15. GET /roads/:roadId/congestion
+获取指定路段的拥堵状态。
+
+#### URL参数
+- `roadId`: 道路ID (字符串)
+
+#### 响应
+```json
+{
+  "roadId": "road-1",
+  "roadName": "道路A",
+  "description": "主干道",
+  "vehicleCount": 15,
+  "nodeCount": 100,
+  "averageSpeed": 30,
+  "trafficLevel": "CONGESTED",
+  "trafficDistribution": {
+    "UNKNOWN": 0,
+    "SMOOTH": 20,
+    "NORMAL": 10,
+    "CONGESTED": 70
+  },
+  "congestionPercentage": 70,
+  "hasEvents": true,
+  "lastUpdated": "2023-01-01T00:00:00.000Z",
+  "nodes": [
+    {
+      "id": 1,
+      "x": 10,
+      "y": 100,
+      "traffic": "CONGESTED",
+      "event": null,
+      "updatedAt": "2023-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### 16. GET /roads/:roadId/congestion/history
+获取路段历史拥堵趋势。
+
+#### URL参数
+- `roadId`: 道路ID (字符串)
+
+#### 查询参数
+- `hours`: 查询小时数，默认24小时 (整数，可选)
+
+#### 响应
+```json
+{
+  "roadId": "road-1",
+  "period": {
+    "hours": 24,
+    "start": "2023-01-01T00:00:00.000Z",
+    "end": "2023-01-02T00:00:00.000Z"
+  },
+  "history": [
+    {
+      "time": "2023-01-01T00:00:00.000Z",
+      "vehicleCount": 5
+    },
+    {
+      "time": "2023-01-01T01:00:00.000Z",
+      "vehicleCount": 8
+    }
+  ]
+}
+```
+
+### 17. POST /pathfinding/route
+计算最优路径。
+
+#### 请求体
+```json
+{
+  "startX": 100,
+  "startY": 200,
+  "targetX": 300,
+  "targetY": 400,
+  "considerTraffic": true,
+  "avoidEvents": true,
+  "preferredSpeed": 50
+}
+```
+
+#### 响应
+```json
+{
+  "path": [
+    {
+      "keyPointId": "keypoint-1",
+      "keyPointName": "起点",
+      "x": 100,
+      "y": 200,
+      "type": "ENDPOINT",
+      "roadId": "road-1",
+      "roadName": "道路A"
+    },
+    {
+      "keyPointId": "keypoint-2",
+      "keyPointName": "终点",
+      "x": 300,
+      "y": 400,
+      "type": "ENDPOINT",
+      "roadId": "road-1",
+      "roadName": "道路A"
+    }
+  ],
+  "distance": 282.84,
+  "estimatedTime": 5.66,
+  "roads": [
+    {
+      "id": "road-1",
+      "name": "道路A"
+    }
+  ],
+  "keyPointCount": 2,
+  "options": {
+    "considerTraffic": true,
+    "avoidEvents": true,
+    "preferredSpeed": 50
+  }
+}
+```
+
+### 18. POST /pathfinding/recommended
+获取推荐路径。
+
+#### 请求体
+```json
+{
+  "startX": 100,
+  "startY": 200,
+  "targetX": 300,
+  "targetY": 400
+}
+```
+
+#### 响应
+```json
+{
+  "path": ["..."],
+  "distance": 282.84,
+  "estimatedTime": 5.66,
+  "roads": ["..."],
+  "routeType": "recommended"
+}
+```
+
+### 19. POST /pathfinding/shortest
+获取最短路径。
+
+#### 请求体
+```json
+{
+  "startX": 100,
+  "startY": 200,
+  "targetX": 300,
+  "targetY": 400
+}
+```
+
+#### 响应
+```json
+{
+  "path": ["..."],
+  "distance": 282.84,
+  "estimatedTime": 5.66,
+  "roads": ["..."],
+  "routeType": "shortest"
+}
+```
+
+### 20. POST /pathfinding/keypoints
+基于关键点ID进行路径规划。
+
+#### 请求体
+```json
+{
+  "startKeyPointId": "keypoint-1",
+  "targetKeyPointId": "keypoint-2",
+  "considerTraffic": true,
+  "avoidEvents": true,
+  "preferredSpeed": 50
+}
+```
+
+#### 响应
+```json
+{
+  "success": true,
+  "path": ["..."],
+  "distance": 282.84,
+  "estimatedTime": 5.66,
+  "roads": ["..."]
+}
+```
+
+### 21. POST /pathfinding/batch
+批量路径规划。
+
+#### 请求体
+```json
+{
+  "routes": [
+    {
+      "startX": 100,
+      "startY": 200,
+      "targetX": 300,
+      "targetY": 400,
+      "options": {
+        "considerTraffic": true,
+        "avoidEvents": true
+      }
+    },
+    {
+      "startX": 200,
+      "startY": 300,
+      "targetX": 400,
+      "targetY": 500
+    }
+  ]
+}
+```
+
+#### 响应
+```json
+{
+  "total": 2,
+  "successful": 2,
+  "failed": 0,
+  "results": [
+    {
+      "input": {
+        "startX": 100,
+        "startY": 200,
+        "targetX": 300,
+        "targetY": 400
+      },
+      "result": {
+        "success": true,
+        "path": ["..."],
+        "distance": 282.84,
+        "estimatedTime": 5.66
+      }
+    },
+    {
+      "input": {
+        "startX": 200,
+        "startY": 300,
+        "targetX": 400,
+        "targetY": 500
+      },
+      "result": {
+        "success": true,
+        "path": ["..."],
+        "distance": 282.84,
+        "estimatedTime": 5.66
+      }
+    }
+  ]
+}
+```
+
+### 22. GET /vehicles
 获取所有车辆当前位置，支持基于游标的分页。
 
 #### 查询参数
@@ -429,7 +722,7 @@
 }
 ```
 
-### 15. POST /vehicles
+### 23. POST /vehicles
 注册新车辆。
 
 #### 请求体
@@ -461,7 +754,7 @@
 }
 ```
 
-### 16. GET /vehicles/stats
+### 24. GET /vehicles/stats
 获取车辆统计信息。
 
 #### 响应
@@ -486,7 +779,7 @@
 }
 ```
 
-### 17. GET /vehicles/:vehicleId
+### 25. GET /vehicles/:vehicleId
 获取单个车辆当前位置。
 
 #### URL参数
@@ -508,7 +801,7 @@
 }
 ```
 
-### 18. GET /vehicles/:vehicleId/trajectory
+### 26. GET /vehicles/:vehicleId/trajectory
 获取车辆轨迹历史。
 
 #### URL参数
@@ -539,7 +832,7 @@
 ]
 ```
 
-### 19. GET /vehicles/:vehicleId/history/valid
+### 27. GET /vehicles/:vehicleId/history/valid
 获取车辆最近的有效位置历史。
 
 #### URL参数
@@ -568,7 +861,7 @@
 ]
 ```
 
-### 20. DELETE /vehicles/:vehicleId
+### 28. DELETE /vehicles/:vehicleId
 删除车辆及其历史数据。
 
 #### URL参数
@@ -582,7 +875,7 @@
 }
 ```
 
-### 21. GET /vehicles/area/search
+### 29. GET /vehicles/area/search
 获取指定区域内的车辆。
 
 #### 查询参数
@@ -609,7 +902,7 @@
 ]
 ```
 
-### 22. DELETE /vehicles/history/clean
+### 30. DELETE /vehicles/history/clean
 清理旧的历史数据。
 
 #### 查询参数
