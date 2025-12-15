@@ -28,6 +28,14 @@ import {
     getRoadCongestionHistory
 } from "../controllers/trafficCongestion.js";
 
+import {
+    calculateRoute,
+    getRecommendedRoute,
+    getShortestRoute,
+    batchCalculateRoutes,
+    findPathBetweenKeyPoints
+} from "../controllers/pathfinding.js";
+
 export function buildRouter(prisma: PrismaClient){
     const router = express.Router();
     router.use(express.json({ limit: "10mb" }));
@@ -65,6 +73,15 @@ export function buildRouter(prisma: PrismaClient){
     router.get("/roads/congestion/overview", getAllRoadsCongestion(prisma));
     router.get("/roads/:roadId/congestion", getRoadCongestion(prisma));
     router.get("/roads/:roadId/congestion/history", getRoadCongestionHistory(prisma));
+
+    // 路径规划路由
+    const ASTAR_SERVICE_URL = process.env. ASTAR_SERVICE_URL || 'http://localhost:8080';
+
+    router.post("/pathfinding/route", calculateRoute(prisma, ASTAR_SERVICE_URL));
+    router.post("/pathfinding/recommended", getRecommendedRoute(prisma, ASTAR_SERVICE_URL));
+    router.post("/pathfinding/shortest", getShortestRoute(prisma, ASTAR_SERVICE_URL));
+    router.post("/pathfinding/keypoints", findPathBetweenKeyPoints(prisma, ASTAR_SERVICE_URL));
+    router.post("/pathfinding/batch", batchCalculateRoutes(prisma, ASTAR_SERVICE_URL));
 
     return router;
 }
