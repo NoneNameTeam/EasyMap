@@ -20,7 +20,13 @@ import {
     getVehicleTrajectory,
     getVehicleValidHistory,
     registerVehicle
-} from "../controllers/vehicle";
+} from "../controllers/vehicle.js";
+
+import {
+    getRoadCongestion,
+    getAllRoadsCongestion,
+    getRoadCongestionHistory
+} from "../controllers/trafficCongestion.js";
 
 export function buildRouter(prisma: PrismaClient){
     const router = express.Router();
@@ -54,6 +60,11 @@ export function buildRouter(prisma: PrismaClient){
     router.delete("/vehicles/:vehicleId", deleteVehicle(prisma));
     router.get("/vehicles/area/search", getVehiclesInArea(prisma));
     router.delete("/vehicles/history/clean", cleanOldHistory(prisma));
+
+    // 拥堵状态
+    router.get("/roads/congestion/overview", getAllRoadsCongestion(prisma));
+    router.get("/roads/:roadId/congestion", getRoadCongestion(prisma));
+    router.get("/roads/:roadId/congestion/history", getRoadCongestionHistory(prisma));
 
     return router;
 }
