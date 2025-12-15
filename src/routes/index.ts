@@ -11,6 +11,16 @@ import {
 } from "../controllers/roadConfig.js";
 
 import cors from "cors";
+import {
+    cleanOldHistory,
+    deleteVehicle,
+    getAllVehicles,
+    getVehicleCurrentLocation, getVehiclesInArea,
+    getVehicleStats,
+    getVehicleTrajectory,
+    getVehicleValidHistory,
+    registerVehicle
+} from "../controllers/vehicle";
 
 export function buildRouter(prisma: PrismaClient){
     const router = express.Router();
@@ -32,9 +42,18 @@ export function buildRouter(prisma: PrismaClient){
     router.get("/roads/:id", getRoadById(prisma));
     router.delete("/roads/:id", deleteRoad(prisma));
     router.get("/roads/network/graph", getRoadNetwork(prisma));
-
     router.get("/roads/network", getRoadNetwork(prisma));
 
+    // 车辆位置路由
+    router.get("/vehicles", getAllVehicles(prisma));
+    router.post("/vehicles", registerVehicle(prisma));
+    router.get("/vehicles/stats", getVehicleStats(prisma));
+    router.get("/vehicles/:vehicleId", getVehicleCurrentLocation(prisma));
+    router.get("/vehicles/:vehicleId/trajectory", getVehicleTrajectory(prisma));
+    router.get("/vehicles/:vehicleId/history/valid", getVehicleValidHistory(prisma));
+    router.delete("/vehicles/:vehicleId", deleteVehicle(prisma));
+    router.get("/vehicles/area/search", getVehiclesInArea(prisma));
+    router.delete("/vehicles/history/clean", cleanOldHistory(prisma));
 
     return router;
 }

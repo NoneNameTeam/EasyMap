@@ -139,3 +139,36 @@ model Lane {
 
   @@index([roadId])
 }
+
+model Vehicle {
+  id          String   @id @default(uuid())
+  type        String   // "CAR" | "TRUCK" | "MOTORCYCLE" | etc.
+  currentX    Int
+  currentY    Int
+  speed       Int
+  direction   String   // "NORTH" | "SOUTH" | "EAST" | "WEST"
+  distance    Int
+  angle       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([currentX, currentY])
+}
+
+model VehicleLocationHistory {
+  id          String   @id @default(uuid())
+  vehicleId   String
+  X           Int
+  Y           Int
+  type        String
+  direction   String   // "NORTH" | "SOUTH" | "EAST" | "WEST"
+  distance    Int
+  angle       Int
+  valid       Boolean  @default(false)
+  events      Int
+  rssi        Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([X, Y])
+}
