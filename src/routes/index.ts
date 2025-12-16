@@ -97,6 +97,7 @@ export function buildRouter(prisma: PrismaClient){
     router.get("/roads/:roadId/congestion/history", getRoadCongestionHistory(prisma));
     router.put("/roads/:roadId/lanes/:laneNumber/congestion", setLaneCongestion(prisma));
 
+
     // 路径规划路由
     const ASTAR_SERVICE_URL = process.env. ASTAR_SERVICE_URL || 'http://localhost:8080';
 

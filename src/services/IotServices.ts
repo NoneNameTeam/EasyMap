@@ -99,7 +99,6 @@ export class TrafficControlService {
             duration:  duration || 30,
             timestamp: Math.floor(Date.now() / 1000)
         });
-        console.log('Dev publish data topic:' + topic + ' payload:' + payload);
         this.mqttClient.publish(topic, payload);
     }
 
