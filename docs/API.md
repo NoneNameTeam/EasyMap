@@ -917,6 +917,322 @@
 }
 ```
 
+### 31. GET /traffic-lights
+获取所有交通灯配置。
+
+#### 查询参数
+- `roadId`: 按道路ID过滤 (字符串，可选)
+
+#### 响应
+```json
+[
+  {
+    "id": "light-1",
+    "name": "交通灯1",
+    "x": 100,
+    "y": 200,
+    "roadId": "road-1",
+    "state": "RED",
+    "duration": 30,
+    "lastChanged": "2023-01-01T00:00:00.000Z",
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z"
+  }
+]
+```
+
+### 32. GET /traffic-lights/:id
+获取单个交通灯详情。
+
+#### URL参数
+- `id`: 交通灯ID (字符串)
+
+#### 响应
+```json
+{
+  "id": "light-1",
+  "name": "交通灯1",
+  "x": 100,
+  "y": 200,
+  "roadId": "road-1",
+  "state": "RED",
+  "duration": 30,
+  "lastChanged": "2023-01-01T00:00:00.000Z",
+  "createdAt": "2023-01-01T00:00:00.000Z",
+  "updatedAt": "2023-01-01T00:00:00.000Z"
+}
+```
+
+### 33. POST /traffic-lights
+创建新的交通灯配置。
+
+#### 请求体
+```json
+{
+  "name": "交通灯1",
+  "x": 100,
+  "y": 200,
+  "roadId": "road-1",
+  "duration": 30
+}
+```
+
+#### 响应
+```json
+{
+  "id": "light-1",
+  "name": "交通灯1",
+  "x": 100,
+  "y": 200,
+  "roadId": "road-1",
+  "state": "RED",
+  "duration": 30,
+  "lastChanged": "2023-01-01T00:00:00.000Z",
+  "createdAt": "2023-01-01T00:00:00.000Z",
+  "updatedAt": "2023-01-01T00:00:00.000Z"
+}
+```
+
+### 34. PUT /traffic-lights/:id/state
+更新交通灯状态。
+
+#### URL参数
+- `id`: 交通灯ID (字符串)
+
+#### 请求体
+```json
+{
+  "state": "GREEN",
+  "duration": 45
+}
+```
+
+#### 响应
+```json
+{
+  "id": "light-1",
+  "name": "交通灯1",
+  "x": 100,
+  "y": 200,
+  "roadId": "road-1",
+  "state": "GREEN",
+  "duration": 45,
+  "lastChanged": "2023-01-01T00:00:00.000Z",
+  "createdAt": "2023-01-01T00:00:00.000Z",
+  "updatedAt": "2023-01-01T00:00:00.000Z"
+}
+```
+
+### 35. DELETE /traffic-lights/:id
+删除交通灯配置。
+
+#### URL参数
+- `id`: 交通灯ID (字符串)
+
+#### 响应
+```json
+{
+  "deleted": true,
+  "message": "Traffic light deleted successfully"
+}
+```
+
+### 36. POST /traffic-lights/batch
+批量更新交通灯状态。
+
+#### 请求体
+```json
+{
+  "updates": [
+    {
+      "id": "light-1",
+      "state": "GREEN",
+      "duration": 30
+    },
+    {
+      "id": "light-2",
+      "state": "RED",
+      "duration": 30
+    }
+  ]
+}
+```
+
+#### 响应
+```json
+[
+  {
+    "id": "light-1",
+    "name": "交通灯1",
+    "x": 100,
+    "y": 200,
+    "roadId": "road-1",
+    "state": "GREEN",
+    "duration": 30,
+    "lastChanged": "2023-01-01T00:00:00.000Z",
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "light-2",
+    "name": "交通灯2",
+    "x": 150,
+    "y": 250,
+    "roadId": "road-2",
+    "state": "RED",
+    "duration": 30,
+    "lastChanged": "2023-01-01T00:00:00.000Z",
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z"
+  }
+]
+```
+
+### 37. GET /parking-gates
+获取所有停车场闸机配置。
+
+#### 查询参数
+- `parkingLotId`: 按停车场ID过滤 (字符串，可选)
+
+#### 响应
+```json
+[
+  {
+    "id": "gate-1",
+    "name": "停车场入口闸机",
+    "x": 100,
+    "y": 200,
+    "parkingLotId": "lot-1",
+    "state": "CLOSED",
+    "lastOpened": "2023-01-01T00:00:00.000Z",
+    "lastClosed": "2023-01-01T00:00:00.000Z",
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z"
+  }
+]
+```
+
+### 38. GET /parking-gates/:id
+获取单个停车场闸机详情。
+
+#### URL参数
+- `id`: 闸机ID (字符串)
+
+#### 响应
+```json
+{
+  "id": "gate-1",
+  "name": "停车场入口闸机",
+  "x": 100,
+  "y": 200,
+  "parkingLotId": "lot-1",
+  "state": "CLOSED",
+  "lastOpened": "2023-01-01T00:00:00.000Z",
+  "lastClosed": "2023-01-01T00:00:00.000Z",
+  "createdAt": "2023-01-01T00:00:00.000Z",
+  "updatedAt": "2023-01-01T00:00:00.000Z"
+}
+```
+
+### 39. POST /parking-gates
+创建新的停车场闸机配置。
+
+#### 请求体
+```json
+{
+  "name": "停车场入口闸机",
+  "x": 100,
+  "y": 200,
+  "parkingLotId": "lot-1"
+}
+```
+
+#### 响应
+```json
+{
+  "id": "gate-1",
+  "name": "停车场入口闸机",
+  "x": 100,
+  "y": 200,
+  "parkingLotId": "lot-1",
+  "state": "CLOSED",
+  "createdAt": "2023-01-01T00:00:00.000Z",
+  "updatedAt": "2023-01-01T00:00:00.000Z"
+}
+```
+
+### 40. POST /parking-gates/:id/control
+控制停车场闸机开关。
+
+#### URL参数
+- `id`: 闸机ID (字符串)
+
+#### 请求体
+```json
+{
+  "action": "OPEN"
+}
+```
+
+#### 响应
+```json
+{
+  "id": "gate-1",
+  "name": "停车场入口闸机",
+  "x": 100,
+  "y": 200,
+  "parkingLotId": "lot-1",
+  "state": "OPENING",
+  "lastOpened": "2023-01-01T00:00:00.000Z",
+  "lastClosed": "2023-01-01T00:00:00.000Z",
+  "createdAt": "2023-01-01T00:00:00.000Z",
+  "updatedAt": "2023-01-01T00:00:00.000Z"
+}
+```
+
+### 41. PUT /parking-gates/:id/status
+更新停车场闸机状态（用于接收硬件设备状态反馈）。
+
+#### URL参数
+- `id`: 闸机ID (字符串)
+
+#### 请求体
+```json
+{
+  "state": "OPEN"
+}
+```
+
+#### 响应
+```json
+{
+  "id": "gate-1",
+  "name": "停车场入口闸机",
+  "x": 100,
+  "y": 200,
+  "parkingLotId": "lot-1",
+  "state": "OPEN",
+  "lastOpened": "2023-01-01T00:00:00.000Z",
+  "lastClosed": "2023-01-01T00:00:00.000Z",
+  "createdAt": "2023-01-01T00:00:00.000Z",
+  "updatedAt": "2023-01-01T00:00:00.000Z"
+}
+```
+
+### 42. DELETE /parking-gates/:id
+删除停车场闸机配置。
+
+#### URL参数
+- `id`: 闸机ID (字符串)
+
+#### 响应
+```json
+{
+  "deleted": true,
+  "message": "Parking gate deleted successfully"
+}
+```
+
 ## 数据类型
 
 ### BlockCategory（区块类别）
@@ -950,6 +1266,21 @@
 - `FORWARD` - 正向
 - `BACKWARD` - 反向
 
+### TrafficLightState（交通灯状态）
+- `RED` - 红灯
+- `YELLOW` - 黄灯
+- `GREEN` - 绿灯
+
+### ParkingGateState（停车场闸机状态）
+- `OPEN` - 开启
+- `CLOSED` - 关闭
+- `OPENING` - 正在开启
+- `CLOSING` - 正在关闭
+
+### ParkingGateAction（停车场闸机动作）
+- `OPEN` - 开启
+- `CLOSE` - 关闭
+
 ## MQTT API
 
 ### 概述
@@ -974,6 +1305,50 @@ vehicle/{vehicleId}/info
 vehicle/esp32_001/info
 vehicle/truck-456/info
 ```
+
+#### 交通灯主题
+
+##### 交通灯控制主题（订阅）
+```
+traffic/light/{lightId}/control
+```
+
+**参数说明：**
+- `lightId`: 交通灯唯一标识符，例如 `light-1` 或 `tl_001`
+
+##### 交通灯状态主题（发布）
+```
+traffic/light/{lightId}/state
+```
+
+**参数说明：**
+- `lightId`: 交通灯唯一标识符
+
+#### 停车场闸机主题
+
+##### 闸机控制主题（订阅）
+```
+parking/gate/{gateId}/control
+```
+
+**参数说明：**
+- `gateId`: 闸机唯一标识符，例如 `gate-1` 或 `pg_001`
+
+##### 闸机状态反馈主题（订阅）
+```
+parking/gate/{gateId}/status
+```
+
+**参数说明：**
+- `gateId`: 闸机唯一标识符
+
+##### 闸机控制指令主题（发布）
+```
+parking/gate/{gateId}/command
+```
+
+**参数说明：**
+- `gateId`: 闸机唯一标识符
 
 ### 消息格式
 
@@ -1009,20 +1384,127 @@ vehicle/truck-456/info
 - `events`: 事件标记（如 0=无事件, 1=左转, 2=右转等）
 - `rssi`: 信号强度（dBm）
 
+#### 交通灯消息
+
+##### 交通灯控制消息
+```json
+{
+  "light_id": "light-1",
+  "state": "GREEN",
+  "duration": 45,
+  "timestamp": 1672531200
+}
+```
+
+**字段说明：**
+- `light_id`: 交通灯唯一标识符
+- `state`: 交通灯状态（`RED`, `YELLOW`, `GREEN`）
+- `duration`: 状态持续时间（秒）
+- `timestamp`: Unix时间戳（秒）
+
+##### 交通灯状态消息
+```json
+{
+  "light_id": "light-1",
+  "state": "GREEN",
+  "duration": 30,
+  "timestamp": 1672531200
+}
+```
+
+**字段说明：**
+- `light_id`: 交通灯唯一标识符
+- `state`: 交通灯状态（`RED`, `YELLOW`, `GREEN`）
+- `duration`: 状态持续时间（秒）
+- `timestamp`: Unix时间戳（秒）
+
+#### 停车场闸机消息
+
+##### 闸机控制消息
+```json
+{
+  "gate_id": "gate-1",
+  "action": "OPEN",
+  "vehicle_id": "vehicle-123",
+  "timestamp": 1672531200
+}
+```
+
+**字段说明：**
+- `gate_id`: 闸机唯一标识符
+- `action`: 控制动作（`OPEN`, `CLOSE`）
+- `vehicle_id`: 车辆ID（可选）
+- `timestamp`: Unix时间戳（秒）
+
+##### 闸机状态反馈消息
+```json
+{
+  "gate_id": "gate-1",
+  "state": "OPEN",
+  "timestamp": 1672531200
+}
+```
+
+**字段说明：**
+- `gate_id`: 闸机唯一标识符
+- `state`: 闸机状态（`OPEN`, `CLOSED`, `OPENING`, `CLOSING`）
+- `timestamp`: Unix时间戳（秒）
+
+##### 闸机控制指令消息
+```json
+{
+  "gate_id": "gate-1",
+  "action": "OPEN",
+  "vehicle_id": "vehicle-123",
+  "timestamp": 1672531200
+}
+```
+
+**字段说明：**
+- `gate_id`: 闸机唯一标识符
+- `action`: 控制动作（`OPEN`, `CLOSE`）
+- `vehicle_id`: 车辆ID（可选）
+- `timestamp`: Unix时间戳（秒）
+
 ### MQTT服务功能
 
 #### 数据处理流程
+
+##### 车辆位置数据处理
 1. **接收消息**: 服务器订阅 `vehicle/+/info` 主题，接收所有车辆的位置消息
 2. **数据过滤**: 对位置数据进行去噪和有效性检查
 3. **地图匹配**: 将车辆位置匹配到地图上的道路
 4. **存储历史**: 保存位置数据到数据库
 5. **更新状态**: 更新车辆当前位置和交通状态
 
+##### 交通灯数据处理
+1. **接收控制消息**: 服务器订阅 `traffic/light/+/control` 主题
+2. **更新状态**: 根据接收到的消息更新交通灯状态到数据库
+3. **发布状态**: 通过 `traffic/light/{lightId}/state` 主题发布最新状态
+
+##### 停车场闸机数据处理
+1. **接收控制消息**: 服务器订阅 `parking/gate/+/control` 主题
+2. **接收状态反馈**: 服务器订阅 `parking/gate/+/status` 主题接收硬件状态反馈
+3. **更新数据库**: 根据消息更新闸机状态到数据库
+4. **发布指令**: 通过 `parking/gate/{gateId}/command` 主题向硬件发布控制指令
+
 #### 数据有效性检查
+
+##### 车辆位置数据
 - 检查 `valid` 标记是否为 `true`
 - 过滤坐标为 (0, 0) 的无效数据
 - 检查 RSSI 信号强度（小于 -80 dBm 视为无效）
 - 检查定位误差（大于 10 米视为无效）
+
+##### 交通灯数据
+- 检查交通灯ID是否存在
+- 验证状态值是否为有效的交通灯状态（`RED`, `YELLOW`, `GREEN`）
+- 验证持续时间是否为正数
+
+##### 停车场闸机数据
+- 检查闸机ID是否存在
+- 验证动作值是否为有效的闸机动作（`OPEN`, `CLOSE`）
+- 验证状态值是否为有效的闸机状态（`OPEN`, `CLOSED`, `OPENING`, `CLOSING`）
 
 #### 交通状态更新
 - 根据道路上的车辆密度自动更新交通状态
@@ -1031,6 +1513,17 @@ vehicle/truck-456/info
   - `SMOOTH` - 畅通（车辆密度 < 0.1）
   - `NORMAL` - 正常（车辆密度 0.1-0.3）
   - `CONGESTED` - 拥堵（车辆密度 > 0.3）
+
+#### 交通灯控制功能
+- 支持实时控制交通灯状态
+- 支持设置状态持续时间
+- 自动记录状态变更时间
+
+#### 停车场闸机控制功能
+- 支持远程控制闸机开关
+- 支持接收硬件状态反馈
+- 记录开关时间
+- 支持关联车辆ID
 
 ### MQTT客户端示例
 
