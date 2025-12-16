@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, TrafficLevel } from "@prisma/client";
 import { formatResponse } from "../utils/formatter.js";
 
 /**
@@ -379,4 +379,130 @@ function groupByTimeSlots(history: any[], roadId: string, hours: number) {
     }
 
     return slots;
+}
+
+/**
+ * 人工设置车道的拥堵情况
+ * PUT /roads/:roadId/lanes/:laneNumber/congestion
+ */
+export function setLaneCongestion(prisma: PrismaClient) {
+    return async (req: Request, res: Response) => {
+        try {
+            const { roadId, laneNumber } = req.params;
+            const { trafficLevel } = req.body;
+
+            // 1. 验证拥堵等级是否有效
+            const validTrafficLevels = Object.values(TrafficLevel);
+            if (!validTrafficLevels.includes(trafficLevel as TrafficLevel)) {
+                return formatResponse(
+                    res, 
+                    null, 
+                    `Invalid traffic level. Valid values: ${validTrafficLevels.join(', ')}`, 
+                    400
+                );
+            }
+
+            // 2. 获取指定车道
+            const lane = await prisma.lane.findFirst({
+                where: {
+                    roadId,
+                    laneNumber: parseInt(laneNumber)
+                }
+            });
+
+            if (!lane) {
+                return formatResponse(res, null, "Lane not found", 404);
+            }
+
+            // 3. 根据车道的起止点计算车道范围
+            let nodesInLane: any[] = [];
+            
+            if (lane.startX === lane.endX) {
+                // 垂直车道: x固定
+                const minY = Math.min(lane.startY, lane.endY);
+                const maxY = Math.max(lane.startY, lane.endY);
+                
+                // 计算车道的x范围（考虑车道宽度）
+                const laneMinX = lane.startX - (lane.width / 2);
+                const laneMaxX = lane.startX + (lane.width / 2);
+                
+                // 获取车道范围内的地图节点
+                nodesInLane = await prisma.mapNode.findMany({
+                    where: {
+                        roadId,
+                        block: 'ROAD',
+                        x: { gte: Math.floor(laneMinX), lte: Math.ceil(laneMaxX) },
+                        y: { gte: minY, lte: maxY }
+                    }
+                });
+            } else {
+                // 水平车道: y固定
+                const minX = Math.min(lane.startX, lane.endX);
+                const maxX = Math.max(lane.startX, lane.endX);
+                
+                // 计算车道的y范围（考虑车道宽度）
+                const laneMinY = lane.startY - (lane.width / 2);
+                const laneMaxY = lane.startY + (lane.width / 2);
+                
+                // 获取车道范围内的地图节点
+                nodesInLane = await prisma.mapNode.findMany({
+                    where: {
+                        roadId,
+                        block: 'ROAD',
+                        x: { gte: minX, lte: maxX },
+                        y: { gte: Math.floor(laneMinY), lte: Math.ceil(laneMaxY) }
+                    }
+                });
+            }
+
+            if (nodesInLane.length === 0) {
+                return formatResponse(res, null, "No map nodes found in this lane", 404);
+            }
+
+            // 4. 更新车道内所有节点的拥堵状态
+            await prisma.mapNode.updateMany({
+                where: {
+                    id: {
+                        in: nodesInLane.map(node => node.id)
+                    }
+                },
+                data: {
+                    traffic: trafficLevel as TrafficLevel
+                }
+            });
+
+            // 5. 返回更新结果
+            const updatedNodes = await prisma.mapNode.findMany({
+                where: {
+                    id: {
+                        in: nodesInLane.map(node => node.id)
+                    }
+                },
+                select: {
+                    id: true,
+                    x: true,
+                    y: true,
+                    traffic: true
+                }
+            });
+
+            formatResponse(
+                res, 
+                {
+                    roadId,
+                    laneNumber: lane.laneNumber,
+                    direction: lane.direction,
+                    updatedNodesCount: updatedNodes.length,
+                    trafficLevel,
+                    updatedNodes
+                },
+                "Lane congestion updated successfully",
+                200
+            );
+
+        } catch (error) {
+            console.error("Set lane congestion error:", error);
+            formatResponse(res, null, "Failed to set lane congestion", 500);
+        }
+    };
 }

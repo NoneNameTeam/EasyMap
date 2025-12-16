@@ -7,9 +7,10 @@ import {
     getAllRoads,
     getRoadById,
     getRoadNetwork,
-    deleteRoad
+    deleteRoad,
+    regenerateRoadLanes
 } from "../controllers/roadConfig.js";
-
+import mqtt from "mqtt";
 import cors from "cors";
 import {
     cleanOldHistory,
@@ -25,7 +26,8 @@ import {
 import {
     getRoadCongestion,
     getAllRoadsCongestion,
-    getRoadCongestionHistory
+    getRoadCongestionHistory,
+    setLaneCongestion
 } from "../controllers/trafficCongestion.js";
 
 import {
@@ -53,6 +55,7 @@ import {
     updateParkingGateStatus,
     deleteParkingGate
 } from "../controllers/parkingGate.js";
+import { PublishMqttMessage } from "../controllers/mqttpublisher.js";
 
 export function buildRouter(prisma: PrismaClient){
     const router = express.Router();
@@ -91,6 +94,7 @@ export function buildRouter(prisma: PrismaClient){
     router.get("/roads/congestion/overview", getAllRoadsCongestion(prisma));
     router.get("/roads/:roadId/congestion", getRoadCongestion(prisma));
     router.get("/roads/:roadId/congestion/history", getRoadCongestionHistory(prisma));
+    router.put("/roads/:roadId/lanes/:laneNumber/congestion", setLaneCongestion(prisma));
 
     // 路径规划路由
     const ASTAR_SERVICE_URL = process.env. ASTAR_SERVICE_URL || 'http://localhost:8080';
@@ -116,6 +120,11 @@ export function buildRouter(prisma: PrismaClient){
     router.post("/parking-gates/:id/control", controlParkingGate(prisma));
     router.put("/parking-gates/:id/status", updateParkingGateStatus(prisma));
     router.delete("/parking-gates/:id", deleteParkingGate(prisma));
+
+
+    //mqtt转发代码
+    const mqttClient = mqtt.connect(process.env.MQTT_BROKER || 'mqtt://localhost:1883');
+    router.post("/mqtt/publish", PublishMqttMessage(mqttClient));
 
     return router;
 }
