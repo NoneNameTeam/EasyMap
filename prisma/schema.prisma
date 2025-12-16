@@ -172,3 +172,56 @@ model VehicleLocationHistory {
 
   @@index([X, Y])
 }
+
+// 红绿灯模型
+model TrafficLight {
+  id          String   @id @default(cuid())
+  name        String
+  x           Float    // 地图坐标
+  y           Float
+  roadId      String?   // 关联道路
+  state       TrafficLightState @default(RED)
+  lastChanged DateTime @default(now())
+  duration    Int      @default(30) // 当前状态持续时间(秒)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([roadId])
+}
+
+// 停车场大门模型
+model ParkingGate {
+  id          String   @id @default(cuid())
+  name        String
+  x           Float
+  y           Float
+  state       GateState @default(CLOSED)
+  parkingLotId String? 
+  lastOpened  DateTime?
+  lastClosed  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([parkingLotId])
+}
+
+enum TrafficLightState {
+  RED
+  YELLOW
+  GREEN
+}
+
+enum GateState {
+  OPEN
+  CLOSED
+  OPENING
+  CLOSING
+  ERROR
+}
+
+enum GateAction {
+  OPEN
+  CLOSE
+  AUTO_OPEN
+  AUTO_CLOSE
+}

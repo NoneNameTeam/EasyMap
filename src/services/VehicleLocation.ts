@@ -55,7 +55,7 @@ export class VehicleLocationService {
                     return;
                 }
 
-                const rawData:  ESP32LocationData = JSON.parse(message.toString());
+                const rawData:ESP32LocationData = JSON.parse(message.toString());
 
                 // 标准化数据,添加默认值
                 const data: VehicleLocation = this.normalizeESP32Data(rawData, vehicleId);

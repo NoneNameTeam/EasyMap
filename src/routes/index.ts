@@ -36,6 +36,24 @@ import {
     findPathBetweenKeyPoints
 } from "../controllers/pathfinding.js";
 
+import {
+    getAllTrafficLights,
+    getTrafficLightById,
+    createTrafficLight,
+    updateTrafficLightState,
+    deleteTrafficLight,
+    batchUpdateTrafficLights
+} from "../controllers/trafficLight.js";
+
+import {
+    getAllParkingGates,
+    getParkingGateById,
+    createParkingGate,
+    controlParkingGate,
+    updateParkingGateStatus,
+    deleteParkingGate
+} from "../controllers/parkingGate.js";
+
 export function buildRouter(prisma: PrismaClient){
     const router = express.Router();
     router.use(express.json({ limit: "10mb" }));
@@ -82,6 +100,22 @@ export function buildRouter(prisma: PrismaClient){
     router.post("/pathfinding/shortest", getShortestRoute(prisma, ASTAR_SERVICE_URL));
     router.post("/pathfinding/keypoints", findPathBetweenKeyPoints(prisma, ASTAR_SERVICE_URL));
     router.post("/pathfinding/batch", batchCalculateRoutes(prisma, ASTAR_SERVICE_URL));
+
+    //红绿灯API
+    router.get("/traffic-lights", getAllTrafficLights(prisma));
+    router.get("/traffic-lights/:id", getTrafficLightById(prisma));
+    router.post("/traffic-lights", createTrafficLight(prisma));
+    router.put("/traffic-lights/:id/state", updateTrafficLightState(prisma));
+    router.delete("/traffic-lights/:id", deleteTrafficLight(prisma));
+    router.post("/traffic-lights/batch", batchUpdateTrafficLights(prisma));
+
+    //停车场大门API
+    router.get("/parking-gates", getAllParkingGates(prisma));
+    router.get("/parking-gates/:id", getParkingGateById(prisma));
+    router.post("/parking-gates", createParkingGate(prisma));
+    router.post("/parking-gates/:id/control", controlParkingGate(prisma));
+    router.put("/parking-gates/:id/status", updateParkingGateStatus(prisma));
+    router.delete("/parking-gates/:id", deleteParkingGate(prisma));
 
     return router;
 }

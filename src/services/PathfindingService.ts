@@ -290,6 +290,11 @@ export class PathfindingService {
                     v: targetIdx + 1,
                     w: weight
                 });
+                edges.push({
+                    u: targetIdx + 1,
+                    v: i + 1,
+                    w: weight
+                });
             }
         }
 
@@ -393,23 +398,38 @@ export class PathfindingService {
      */
     private async callAstarService(request: AstarRequest): Promise<AstarResponse> {
         try {
-            console.log(`Calling A* service:  ${this.astarServiceUrl}`);
+            console.log(`Calling A* service: ${this.astarServiceUrl}`);
             console.log(`Graph size: ${request.n} nodes, ${request.edges.length} edges`);
 
-            const response = await axios. post<AstarResponse>(
-                this. astarServiceUrl,
+            // 添加详细的请求日志
+            console.log('A* Request:', JSON.stringify(request, null, 2));
+
+            const response = await axios.post<AstarResponse>(
+                this.astarServiceUrl,
                 request,
                 {
-                    headers:  { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' },
                     timeout: 30000
                 }
             );
 
-            return response.data;
+            // 添加响应日志
+            console.log('A* Response:', JSON.stringify(response.data, null, 2));
+            console.log('A* Status:', response.status);
+
+            return response. data;
         } catch (error) {
+            // 增强错误日志
             if (axios.isAxiosError(error)) {
-                throw new Error(`A* Service Error: ${error.message}`);
+                console.error('A* Service Axios Error: ');
+                console.error('- Message:', error.message);
+                console.error('- Response Status:', error.response?.status);
+                console.error('- Response Data:', JSON.stringify(error.response?.data, null, 2));
+                console.error('- Request URL:', error.config?.url);
+
+                throw new Error(`A* Service Error: ${error.message} - ${JSON.stringify(error.response?.data)}`);
             }
+            console.error('Unknown A* Service Error:', error);
             throw error;
         }
     }
