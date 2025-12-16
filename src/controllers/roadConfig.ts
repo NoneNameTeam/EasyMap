@@ -327,9 +327,9 @@ export function regenerateRoadLanes(prisma: PrismaClient) {
             // 3. 准备重新生成车道所需的配置
             const config: RoadConfig = {
                 name: road.name,
-                description: road.description,
+                description: road.description ?? undefined, // 将 null 转换为 undefined
                 centerLines: road.centerLines.map(cl => ({
-                    type: cl.type,
+                    type: cl.type as "HORIZONTAL" | "VERTICAL", // 类型断言
                     value: cl.fixedValue,
                     start: cl.startValue,
                     end: cl.endValue
@@ -338,7 +338,7 @@ export function regenerateRoadLanes(prisma: PrismaClient) {
                     name: kp.name,
                     x: kp.x,
                     y: kp.y,
-                    type: kp.type,
+                    type: kp.type as "ENDPOINT" | "INTERSECTION" | "T_JUNCTION" | "CORNER" | "ENTRANCE", // 类型断言
                     connectsTo: kp.connectedTo
                 }))
             };
