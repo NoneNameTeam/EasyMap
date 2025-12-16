@@ -181,6 +181,7 @@ model TrafficLight {
   y           Float
   roadId      String?   // 关联道路
   state       TrafficLightState @default(RED)
+  mode        ControlMode       @default(AUTO)
   lastChanged DateTime @default(now())
   duration    Int      @default(30) // 当前状态持续时间(秒)
   createdAt   DateTime @default(now())
@@ -224,4 +225,9 @@ enum GateAction {
   CLOSE
   AUTO_OPEN
   AUTO_CLOSE
+}
+
+enum ControlMode {
+  AUTO    // 自动模式：由后台服务定时切换
+  MANUAL  // 手动模式：仅通过 API 改变状态
 }

@@ -5,6 +5,7 @@ import { VehicleLocationService } from './services/VehicleLocation.js';
 import { initTrafficService } from './controllers/trafficLight.js';
 import { initParkingService } from './controllers/parkingGate.js';
 import {TrafficControlService} from "./services/IotServices";
+import {AutoTrafficLightService} from "./services/AutoTrafficLightService";
 
 const app = express();
 const prisma = new PrismaClient();
@@ -18,6 +19,9 @@ const trafficControlService = new TrafficControlService(prisma, MQTT_BROKER);
 // 注入到 controllers
 initTrafficService(trafficControlService);
 initParkingService(trafficControlService);
+
+const autoTrafficService = new AutoTrafficLightService(prisma, trafficControlService);
+autoTrafficService.start();
 // 构建路由
 const router = buildRouter(prisma);
 app.use('/', router);
@@ -52,7 +56,7 @@ process. on('SIGINT', async () => {
     if (vehicleService) {
         vehicleService.disconnect();
     }
-
+    autoTrafficService.stop();
     await prisma.$disconnect();
     process.exit(0);
 });

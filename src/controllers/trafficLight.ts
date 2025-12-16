@@ -83,23 +83,38 @@ export const updateTrafficLightState = (prisma: PrismaClient) => {
     return async (req: Request, res: Response) => {
         try {
             const { id } = req. params;
-            const { state, duration } = req.body;
+            const { state, duration, mode } = req.body;
 
-            if (!state || !['RED', 'YELLOW', 'GREEN'].includes(state)) {
-                return formatResponse(res,null,'Invalid state. Must be RED, YELLOW, or GREEN',400)
+            const updateData: any = {
+                lastChanged: new Date() // 只要有更新，就重置计时器
+            };
+
+            if (state) {
+                if (!['RED', 'YELLOW', 'GREEN'].includes(state)) {
+                    return formatResponse(res, null, 'Invalid state.', 400);
+                }
+                updateData.state = state;
+            }
+
+            if (duration) {
+                updateData.duration = duration;
+            }
+
+            if (mode) {
+                if (!['AUTO', 'MANUAL'].includes(mode)) {
+                    return formatResponse(res, null, 'Invalid mode. Must be AUTO or MANUAL', 400);
+                }
+                updateData.mode = mode;
             }
 
             const light = await prisma.trafficLight.update({
                 where: { id },
-                data: {
-                    state,
-                    lastChanged: new Date(),
-                    ...(duration && { duration })
-                }
+                data: updateData
             });
 
+            // 推送更新
             if (trafficService) {
-                trafficService.publishTrafficLightState(id, state, duration);
+                trafficService.publishTrafficLightState(id, light.state, light.duration);
             }
 
             formatResponse(res,light);
@@ -139,12 +154,13 @@ export const batchUpdateTrafficLights = (prisma: PrismaClient) => {
             }
 
             const results = await Promise.all(
-                updates.map(({ id, state, duration }) =>
+                updates.map(({ id, state, duration, mode }) =>
                     prisma.trafficLight.update({
                         where: { id },
                         data: {
                             state,
                             lastChanged: new Date(),
+                            ...(mode && { mode }),
                             ...(duration && { duration })
                         }
                     })
