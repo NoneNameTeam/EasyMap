@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import {PrismaClient, TrafficLight} from '@prisma/client';
 import { Request, Response } from 'express';
 import { formatResponse } from "../utils/formatter.js";
 import { TrafficControlService } from "../services/IotServices.js";
@@ -8,6 +8,30 @@ let trafficService: TrafficControlService;
 export function initTrafficService(service: TrafficControlService) {
     trafficService = service;
 }
+
+const formatLightWithCountdown = (light: TrafficLight) => {
+    const now = new Date();
+    const lastChanged = new Date(light.lastChanged);
+
+    // 计算经过的秒数
+    const elapsedSeconds = (now.getTime() - lastChanged.getTime()) / 1000;
+
+    // 计算剩余时间 (总时间 - 经过时间)
+    // 使用 Math.ceil 向上取整，这样 29.1秒剩余会显示 30秒，比较符合人类直觉
+    let remainingTime = Math.ceil(light.duration - elapsedSeconds);
+
+    // 如果是手动模式，或者是负数（极少数情况），归零
+    if (light.mode === 'MANUAL') {
+        remainingTime = 0;
+    } else if (remainingTime < 0) {
+        remainingTime = 0;
+    }
+
+    return {
+        ...light,
+        remainingTime: remainingTime // 附加倒计时字段 (秒)
+    };
+};
 
 // 获取所有红绿灯
 export const getAllTrafficLights = (prisma: PrismaClient) => {
@@ -20,7 +44,9 @@ export const getAllTrafficLights = (prisma: PrismaClient) => {
                 orderBy: { createdAt: 'desc' }
             });
 
-            formatResponse(res,lights);
+            const result = lights.map(light => formatLightWithCountdown(light));
+
+            formatResponse(res,result);
         } catch (error) {
             console.error('Error fetching traffic lights:', error);
             formatResponse(res,null,'Failed to fetch traffic lights',500);
@@ -42,7 +68,7 @@ export const getTrafficLightById = (prisma: PrismaClient) => {
                 return formatResponse(res,null,'Failed to fetch traffic light',500);
             }
 
-            formatResponse(res,light);
+            formatResponse(res,formatLightWithCountdown(light));
         } catch (error) {
             console.error('Error fetching traffic light:', error);
             return formatResponse(res,null,'Failed to fetch traffic light',500);

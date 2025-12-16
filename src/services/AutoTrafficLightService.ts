@@ -11,7 +11,7 @@ const STATE_SEQUENCE = {
 // 定义各状态的默认持续时间（秒）
 // 你也可以选择在数据库中为每个红绿灯单独维护这些配置
 const DEFAULT_DURATIONS = {
-    [TrafficLightState.RED]: 33,    // 红灯亮30秒
+    [TrafficLightState.RED]: 33,    // 红灯亮33秒
     [TrafficLightState.GREEN]: 30,  // 绿灯亮30秒
     [TrafficLightState.YELLOW]: 3,  // 黄灯亮3秒
 };
