@@ -76,6 +76,7 @@ export function buildRouter(prisma: PrismaClient){
     router.get("/roads", getAllRoads(prisma));
     router.get("/roads/:id", getRoadById(prisma));
     router.delete("/roads/:id", deleteRoad(prisma));
+    router.put("/roads/:roadId/lanes/regenerate", regenerateRoadLanes(prisma));
     router.get("/roads/network/graph", getRoadNetwork(prisma));
     router.get("/roads/network", getRoadNetwork(prisma));
 
