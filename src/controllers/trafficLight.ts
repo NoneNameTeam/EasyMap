@@ -108,45 +108,54 @@ export const createTrafficLight = (prisma: PrismaClient) => {
 export const updateTrafficLightState = (prisma: PrismaClient) => {
     return async (req: Request, res: Response) => {
         try {
-            const { id } = req. params;
-            const { state, duration, mode } = req.body;
+            const { id } = req.params;
+            const { state, duration, mode, groupId } = req.body; // 假设允许更新 groupId
 
-            const updateData: any = {
-                lastChanged: new Date() // 只要有更新，就重置计时器
-            };
+            // 1. 先查询这个灯的当前信息
+            const currentLight = await prisma.trafficLight.findUnique({ where: { id } });
+            if (!currentLight) return formatResponse(res, null, 'Light not found', 404);
 
-            if (state) {
-                if (!['RED', 'YELLOW', 'GREEN'].includes(state)) {
-                    return formatResponse(res, null, 'Invalid state.', 400);
-                }
-                updateData.state = state;
-            }
+            // 2. 准备更新数据
+            const updateData: any = { lastChanged: new Date() };
+            if (state) updateData.state = state;
+            if (duration) updateData.duration = duration;
+            if (mode) updateData.mode = mode;
+            if (groupId !== undefined) updateData.groupId = groupId;
 
-            if (duration) {
-                updateData.duration = duration;
-            }
-
-            if (mode) {
-                if (!['AUTO', 'MANUAL'].includes(mode)) {
-                    return formatResponse(res, null, 'Invalid mode. Must be AUTO or MANUAL', 400);
-                }
-                updateData.mode = mode;
-            }
-
-            const light = await prisma.trafficLight.update({
+            // 3. 执行更新
+            const updatedLight = await prisma.trafficLight.update({
                 where: { id },
                 data: updateData
             });
 
-            // 推送更新
-            if (trafficService) {
-                trafficService.publishTrafficLightState(id, light.state, light.duration);
+            // =====================================================
+            // [新增] 互斥逻辑：如果手动设为 GREEN，且该灯属于某个组
+            // =====================================================
+            if (state === 'GREEN' && updatedLight.groupId) {
+                // 强制将同组其他灯设为 RED
+                await prisma.trafficLight.updateMany({
+                    where: {
+                        groupId: updatedLight.groupId,
+                        id: { not: id } // 排除自己
+                    },
+                    data: {
+                        state: 'RED',
+                        lastChanged: new Date()
+                    }
+                });
             }
 
-            formatResponse(res,light);
+            // 发送 IoT 通知
+            if (trafficService) {
+                trafficService.publishTrafficLightState(id, updatedLight.state, updatedLight.duration);
+            }
+
+            // 返回数据 (包含前面做好的倒计时逻辑)
+            // formatResponse(res, formatLightWithCountdown(updatedLight));
+            formatResponse(res, updatedLight);
+
         } catch (error) {
-            console.error('Error updating traffic light state:', error);
-            formatResponse(res,null,'Failed to update traffic light',500);
+            // ... error handling
         }
     };
 };

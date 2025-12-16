@@ -1,109 +1,135 @@
 import { PrismaClient, TrafficLight, TrafficLightState } from '@prisma/client';
 import { TrafficControlService } from "./IotServices.js";
 
-// 定义状态流转规则
-const STATE_SEQUENCE = {
-    [TrafficLightState.RED]: TrafficLightState.GREEN,
-    [TrafficLightState.GREEN]: TrafficLightState.YELLOW,
-    [TrafficLightState.YELLOW]: TrafficLightState.RED,
-};
-
-// 定义各状态的默认持续时间（秒）
-// 你也可以选择在数据库中为每个红绿灯单独维护这些配置
 const DEFAULT_DURATIONS = {
-    [TrafficLightState.RED]: 33,    // 红灯亮33秒
-    [TrafficLightState.GREEN]: 30,  // 绿灯亮30秒
-    [TrafficLightState.YELLOW]: 3,  // 黄灯亮3秒
+    [TrafficLightState.RED]: 0,     // 红灯是被动的，这里的时间设为0或无限均可，因为我们不自动轮询红灯
+    [TrafficLightState.GREEN]: 10,  // 绿灯持续时间
+    [TrafficLightState.YELLOW]: 2,  // 黄灯持续时间
 };
 
 export class AutoTrafficLightService {
     private prisma: PrismaClient;
     private iotService: TrafficControlService;
     private intervalId: NodeJS.Timeout | null = null;
-    private checkIntervalMs: number = 1000; // 每1秒检查一次
 
     constructor(prisma: PrismaClient, iotService: TrafficControlService) {
         this.prisma = prisma;
         this.iotService = iotService;
     }
 
-    // 启动自动切换服务
     public start() {
         if (this.intervalId) return;
-        console.log('🚦 Auto Traffic Light Service started...');
-        this.intervalId = setInterval(() => this.checkAndSwitchLights(), this.checkIntervalMs);
+        console.log('AutoTrafficLightService started.');
+        // 每秒检查一次
+        this.intervalId = setInterval(() => this.checkAndSwitchLights(), 1000);
     }
 
-    // 停止服务
     public stop() {
         if (this.intervalId) {
             clearInterval(this.intervalId);
             this.intervalId = null;
-            console.log('🛑 Auto Traffic Light Service stopped.');
         }
     }
 
     private async checkAndSwitchLights() {
         try {
-            // 1. 获取所有红绿灯
-            // 为了性能，如果数据量极大，建议只查询 lastChanged 较早的数据
-            // 这里假设红绿灯数量在可控范围内 (<1000)，全量查询通常没问题
-            const lights = await this.prisma.trafficLight.findMany({
+            // 1. 只查询当前处于 GREEN 或 YELLOW 状态的自动模式灯
+            // 红灯是“静止”状态，不需要轮询，它等待被激活
+            const activeLights = await this.prisma.trafficLight.findMany({
                 where: {
-                    mode: 'AUTO'
+                    mode: 'AUTO',
+                    state: { in: ['GREEN', 'YELLOW'] }
                 }
             });
+
             const now = new Date();
 
-            const updates = [];
+            for (const light of activeLights) {
+                const elapsed = (now.getTime() - new Date(light.lastChanged).getTime()) / 1000;
 
-            for (const light of lights) {
-                // 计算经过的时间 (秒)
-                const elapsedSeconds = (now.getTime() - new Date(light.lastChanged).getTime()) / 1000;
-
-                // 2. 检查是否超过了持续时间
-                if (elapsedSeconds >= light.duration) {
-                    updates.push(this.switchLightState(light));
+                // 如果时间到了，切换状态
+                if (elapsed >= light.duration) {
+                    await this.handleStateTransition(light);
                 }
             }
 
-            // 3. 并行执行所有更新
-            if (updates.length > 0) {
-                await Promise.all(updates);
-                // console.log(`Updated ${updates.length} traffic lights.`);
-            }
+            // [可选] 故障恢复：如果某个组全是红灯（例如刚初始化），需要随机点亮一个
+            // 这是一个较重的查询，生产环境建议单独起一个定时任务做这个检查
+            // await this.recoverDeadlockGroups();
 
         } catch (error) {
             console.error('Error in AutoTrafficLightService:', error);
         }
     }
 
-    private async switchLightState(light: TrafficLight) {
-        // 获取下一个状态
-        const nextState = STATE_SEQUENCE[light.state];
+    private async handleStateTransition(light: TrafficLight) {
+        // 情况 A: 绿 -> 黄
+        if (light.state === 'GREEN') {
+            await this.updateLight(light.id, 'YELLOW', DEFAULT_DURATIONS.YELLOW);
+        }
+        // 情况 B: 黄 -> 红 (并且激活下一个灯)
+        else if (light.state === 'YELLOW') {
+            // 1. 自己变红
+            await this.updateLight(light.id, 'RED', 0); // 红灯duration不重要
 
-        // 获取下一个状态应该持续的时间
-        // 逻辑：如果是黄灯，通常时间很短。如果是红/绿，时间较长。
-        // 如果你想保留用户在创建时设置的 duration (仅针对红/绿)，可以在这里做判断
-        const nextDuration = DEFAULT_DURATIONS[nextState];
-
-        try {
-            // 更新数据库
-            await this.prisma.trafficLight.update({
-                where: { id: light.id },
-                data: {
-                    state: nextState,
-                    duration: nextDuration,
-                    lastChanged: new Date() // 重置计时器
-                }
-            });
-
-            // 推送到 IoT 服务 (MQTT/WebSocket 等)
-            if (this.iotService) {
-                this.iotService.publishTrafficLightState(light.id, nextState, nextDuration);
+            // 2. 如果有分组，激活下一个
+            if (light.groupId) {
+                await this.activateNextGreenLight(light.groupId, light.sequence);
+            } else {
+                // 如果没有分组（独立灯），直接变回绿
+                await this.updateLight(light.id, 'GREEN', DEFAULT_DURATIONS.GREEN);
             }
-        } catch (error) {
-            console.error(`Failed to update light ${light.id}:`, error);
+        }
+    }
+
+    // 激活同组的下一个灯
+    private async activateNextGreenLight(groupId: string, currentSequence: number) {
+        // 1. 获取该组所有灯，按 sequence 排序
+        const groupLights = await this.prisma.trafficLight.findMany({
+            where: { groupId: groupId },
+            orderBy: { sequence: 'asc' }
+        });
+
+        if (groupLights.length === 0) return;
+
+        // 2. 找到下一个 sequence 的灯
+        // 逻辑：找比当前 sequence 大的最小那个。如果没有，就找 sequence 最小的那个（回到起点）
+        let nextLight = groupLights.find(l => l.sequence > currentSequence);
+
+        if (!nextLight) {
+            nextLight = groupLights[0]; // 循环回到第一个
+        }
+
+        // 3. 将下一个灯设为 GREEN
+        // 注意：这里读取了 nextLight 数据库里配置的 duration，如果没有则用默认值
+        // 这样你可以给主干道设置 60秒，支路设置 20秒
+        const nextDuration = nextLight.duration > 5 ? nextLight.duration : DEFAULT_DURATIONS.GREEN;
+
+        await this.updateLight(nextLight.id, 'GREEN', nextDuration);
+
+        // 4. 双重保险：强制把组内【其他】所有灯设为 RED (防止因手动干扰导致的双绿灯)
+        // 这一步在并发高时很重要
+        await this.prisma.trafficLight.updateMany({
+            where: {
+                groupId: groupId,
+                id: { not: nextLight.id }
+            },
+            data: { state: 'RED', lastChanged: new Date() }
+        });
+    }
+
+    private async updateLight(id: string, state: TrafficLightState, duration: number) {
+        const updated = await this.prisma.trafficLight.update({
+            where: { id },
+            data: {
+                state,
+                duration, // 更新 duration 以便前端倒计时准确
+                lastChanged: new Date()
+            }
+        });
+
+        if (this.iotService) {
+            this.iotService.publishTrafficLightState(id, state, duration);
         }
     }
 }

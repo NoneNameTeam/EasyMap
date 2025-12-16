@@ -180,6 +180,8 @@ model TrafficLight {
   x           Float    // 地图坐标
   y           Float
   roadId      String?   // 关联道路
+  groupId     String?
+  sequence    Int      @default(0)
   state       TrafficLightState @default(RED)
   mode        ControlMode       @default(AUTO)
   lastChanged DateTime @default(now())

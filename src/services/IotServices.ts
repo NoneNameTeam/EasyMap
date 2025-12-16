@@ -35,7 +35,7 @@ export class TrafficControlService {
                 if (topic.startsWith('traffic/light/')) {
                     await this.handleTrafficLightMessage(topic, data);
                 } else if (topic.startsWith('parking/gate/')) {
-                    if (topic. endsWith('/status')) {
+                    if (topic.endsWith('/status')) {
                         await this.handleGateStatusMessage(topic, data);
                     } else if (topic.endsWith('/control')) {
                         await this.handleGateControlMessage(topic, data);
@@ -92,14 +92,14 @@ export class TrafficControlService {
 
     // 发布红绿灯状态
     publishTrafficLightState(lightId: string, state:  string, duration?:  number) {
-        const topic = `traffic/light/${lightId}/state`;
+        const topic = `traffic/light/${lightId}/control`;
         const payload = JSON.stringify({
             light_id: lightId,
             state,
             duration:  duration || 30,
             timestamp: Math.floor(Date.now() / 1000)
         });
-
+        console.log('Dev publish data topic:' + topic + ' payload:' + payload);
         this.mqttClient.publish(topic, payload);
     }
 
