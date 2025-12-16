@@ -141,7 +141,7 @@ export class PathfindingService {
             }
 
             // 7. 转换结果: 将索引转为关键点信息
-            const path = astarResponse.path. map(idx => {
+            const path = astarResponse.path.map(idx => {
                 const kp = keyPoints[idx - 1];  // 转回 0-based
                 return {
                     keyPointId: kp. id,

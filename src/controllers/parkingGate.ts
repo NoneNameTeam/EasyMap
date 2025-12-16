@@ -1,6 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 import { formatResponse } from "../utils/formatter.js";
+import { TrafficControlService } from "../services/IotServices.js";
+
+let trafficService: TrafficControlService;
+
+export function initParkingService(service: TrafficControlService) {
+    trafficService = service;
+}
 
 /**
  * 获取所有停车场大门
@@ -124,8 +131,9 @@ export const controlParkingGate = (prisma: PrismaClient) => {
                 data: updateData
             });
 
-            // TODO: 发布 MQTT 消息通知硬件设备
-            // publishGateControl(id, action);
+            if (trafficService) {
+                trafficService.publishGateControl(id, action, id);
+            }
 
             return formatResponse(res, gate, "Gate control command sent successfully");
         } catch (error: any) {

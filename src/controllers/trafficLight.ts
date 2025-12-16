@@ -1,6 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 import { formatResponse } from "../utils/formatter.js";
+import { TrafficControlService } from "../services/IotServices.js";
+
+let trafficService: TrafficControlService;
+
+export function initTrafficService(service: TrafficControlService) {
+    trafficService = service;
+}
 
 // 获取所有红绿灯
 export const getAllTrafficLights = (prisma: PrismaClient) => {
@@ -91,8 +98,9 @@ export const updateTrafficLightState = (prisma: PrismaClient) => {
                 }
             });
 
-            // TODO: 发布 MQTT 消息
-            // publishTrafficLightState(id, light);
+            if (trafficService) {
+                trafficService.publishTrafficLightState(id, state, duration);
+            }
 
             formatResponse(res,light);
         } catch (error) {

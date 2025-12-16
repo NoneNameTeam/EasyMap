@@ -2,12 +2,22 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { buildRouter } from './routes/index.js';
 import { VehicleLocationService } from './services/VehicleLocation.js';
+import { initTrafficService } from './controllers/trafficLight.js';
+import { initParkingService } from './controllers/parkingGate.js';
+import {TrafficControlService} from "./services/IotServices";
 
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 const MQTT_BROKER = process.env.MQTT_BROKER || 'mqtt://localhost:1883';
 
+
+// 创建 MQTT 服务实例
+const trafficControlService = new TrafficControlService(prisma, MQTT_BROKER);
+
+// 注入到 controllers
+initTrafficService(trafficControlService);
+initParkingService(trafficControlService);
 // 构建路由
 const router = buildRouter(prisma);
 app.use('/', router);
