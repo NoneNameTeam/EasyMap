@@ -71,7 +71,7 @@ export class LocationFilter {
         );
 
         const velocity = distance / timeDelta;
-        const MAX_VELOCITY = 10; // 最大速度30 m/s (约108 km/h)
+        const MAX_VELOCITY = 30; // 最大速度30 m/s (约108 km/h)
 
         return velocity <= MAX_VELOCITY;
     }

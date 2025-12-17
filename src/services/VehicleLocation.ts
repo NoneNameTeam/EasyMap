@@ -113,7 +113,7 @@ export class VehicleLocationService {
             angle: rawData.angle,
             direction: rawData.direction || '未知',
             error: 0, // ESP32端没有发送error字段,默认为0
-            timestamp: Math.floor(Date.now() / 1000),
+            timestamp: rawData.timestamp || Math.floor(Date.now() / 1000),
             events: rawData.events || 0,
             rssi: -999 // ESP32端没有发送RSSI,使用默认值
         };

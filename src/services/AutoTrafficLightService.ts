@@ -33,8 +33,10 @@ export class AutoTrafficLightService {
 
     private async checkAndSwitchLights() {
         try {
-            // 1. 只查询当前处于 GREEN 或 YELLOW 状态的自动模式灯
-            // 红灯是“静止”状态，不需要轮询，它等待被激活
+            // 1. 检查智能红绿灯控制逻辑
+            await this.checkSmartTrafficLights();
+            
+            // 2. 继续执行原有逻辑：管理绿灯和黄灯的时间限制
             const activeLights = await this.prisma.trafficLight.findMany({
                 where: {
                     mode: 'AUTO',
@@ -53,12 +55,112 @@ export class AutoTrafficLightService {
                 }
             }
 
-            // [可选] 故障恢复：如果某个组全是红灯（例如刚初始化），需要随机点亮一个
-            // 这是一个较重的查询，生产环境建议单独起一个定时任务做这个检查
-            // await this.recoverDeadlockGroups();
-
         } catch (error) {
             console.error('Error in AutoTrafficLightService:', error);
+        }
+    }
+    
+    /**
+     * 智能红绿灯控制逻辑：检测到车辆在红绿灯前且其余方向没车就直接绿灯
+     */
+    private async checkSmartTrafficLights() {
+        try {
+            // 1. 获取所有自动模式的红绿灯组
+            const lightGroups = await this.prisma.trafficLight.groupBy({
+                by: ['groupId'],
+                where: {
+                    mode: 'AUTO',
+                    groupId: { not: null }
+                }
+            });
+            
+            for (const group of lightGroups) {
+                if (!group.groupId) continue;
+                
+                // 2. 获取该组内的所有红绿灯
+                const groupLights = await this.prisma.trafficLight.findMany({
+                    where: { groupId: group.groupId },
+                    orderBy: { sequence: 'asc' }
+                });
+                
+                // 3. 检查每个红绿灯前是否有车辆
+                const lightsWithVehicles: { light: any; hasVehicle: boolean }[] = [];
+                
+                for (const light of groupLights) {
+                    const hasVehicle = await this.hasVehicleInApproach(light);
+                    lightsWithVehicles.push({ light, hasVehicle });
+                }
+                
+                // 4. 检查是否只有一个方向有车辆
+                const vehiclesCount = lightsWithVehicles.filter(item => item.hasVehicle).length;
+                
+                if (vehiclesCount === 1) {
+                    // 5. 如果只有一个方向有车辆，且该方向是红灯，则切换为绿灯
+                    const lightWithVehicle = lightsWithVehicles.find(item => item.hasVehicle);
+                    if (lightWithVehicle && lightWithVehicle.light.state === 'RED') {
+                        // 检查当前是否有绿灯或黄灯在运行
+                        const hasActiveLight = groupLights.some(light => 
+                            light.state === 'GREEN' || light.state === 'YELLOW'
+                        );
+                        
+                        if (!hasActiveLight) {
+                            console.log(`[SmartTraffic] Group ${group.groupId}: Switching light ${lightWithVehicle.light.id} to GREEN (only direction with vehicles)`);
+                            // 切换到绿灯
+                            await this.updateLight(lightWithVehicle.light.id, 'GREEN', 
+                                lightWithVehicle.light.duration > 5 ? lightWithVehicle.light.duration : DEFAULT_DURATIONS.GREEN);
+                            
+                            // 确保组内其他灯为红灯
+                            await this.prisma.trafficLight.updateMany({
+                                where: {
+                                    groupId: group.groupId,
+                                    id: { not: lightWithVehicle.light.id }
+                                },
+                                data: { state: 'RED', lastChanged: new Date() }
+                            });
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error in smart traffic light check:', error);
+        }
+    }
+    
+    /**
+     * 检查红绿灯前一定范围内是否有车辆
+     */
+    private async hasVehicleInApproach(light: any): Promise<boolean> {
+        try {
+            const APPROACH_DISTANCE = 50; // 检测范围：50米
+            
+            // 获取该红绿灯关联的道路
+            if (!light.roadId) return false;
+            
+            // 查询该道路上距离红绿灯一定范围内的车辆
+            const vehicles = await this.prisma.vehicle.findMany({
+                where: {
+                    // 计算车辆是否在红绿灯前的一定范围内
+                    // 这里使用简化的矩形范围检测，可以根据实际道路方向进行优化
+                    currentX: {
+                        gte: Math.floor(light.x - APPROACH_DISTANCE),
+                        lte: Math.floor(light.x + APPROACH_DISTANCE)
+                    },
+                    currentY: {
+                        gte: Math.floor(light.y - APPROACH_DISTANCE),
+                        lte: Math.floor(light.y + APPROACH_DISTANCE)
+                    },
+                    // 只考虑最近更新的车辆（1分钟内）
+                    updatedAt: {
+                        gte: new Date(Date.now() - 60000)
+                    }
+                },
+                take: 1 // 只要有一辆车就返回true
+            });
+            
+            return vehicles.length > 0;
+        } catch (error) {
+            console.error('Error checking vehicles in approach:', error);
+            return false;
         }
     }
 
