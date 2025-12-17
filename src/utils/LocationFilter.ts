@@ -19,13 +19,16 @@ export class LocationFilter {
     private readonly HISTORY_SIZE = 10; // 保留最近10个位置
 
     isValidData(data: VehicleLocation): boolean {
+        // 直接采纳id带_real字段的数据
+        if (data.vehicle_id && data.vehicle_id.includes('_real')) {
+            return true;
+        }
+
         // 检查valid标记
         if (!data.valid) return false;
 
         // 检查坐标是否为0(无效数据)
         if (data.x === 0 && data.y === 0) return false;
-
-
 
         return true;
     }
@@ -101,6 +104,12 @@ export class LocationFilter {
     process(data: VehicleLocation): { x: number; y: number } | null {
         if (!this.isValidData(data)) {
             return null;
+        }
+
+        // 直接采纳id带_real字段的数据，跳过所有滤波
+        if (data.vehicle_id && data.vehicle_id.includes('_real')) {
+            this.updateHistory(data);
+            return { x: data.x, y: data.y };
         }
 
         let filtered = this.kalmanFilter(data);
